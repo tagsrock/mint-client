@@ -97,6 +97,36 @@ func coreSend(chainID, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx
 	return tx, nil
 }
 
+func coreCall(chainID, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data string) (*types.CallTx, error) {
+	pub, _, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
+	if err != nil {
+		return nil, err
+	}
+
+	toAddrBytes, err := hex.DecodeString(toAddr)
+	if err != nil {
+		return nil, fmt.Errorf("toAddr is bad hex: %v", err)
+	}
+
+	fee, err := strconv.ParseUint(feeS, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("fee is misformatted: %v", err)
+	}
+
+	gas, err := strconv.ParseUint(gasS, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("gas is misformatted: %v", err)
+	}
+
+	dataBytes, err := hex.DecodeString(data)
+	if err != nil {
+		return nil, fmt.Errorf("data is bad hex: %v", err)
+	}
+
+	tx := types.NewCallTxWithNonce(pub, toAddrBytes, dataBytes, amt, gas, fee, uint(nonce))
+	return tx, nil
+}
+
 func coreName(chainID, pubkey, addr, amtS, nonceS, feeS, name, data string) (*types.NameTx, error) {
 	pub, _, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
 	if err != nil {

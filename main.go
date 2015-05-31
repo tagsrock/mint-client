@@ -29,7 +29,7 @@ func main() {
 		outputCmd,
 		sendCmd,
 		nameCmd,
-		// callCmd,
+		callCmd,
 		// bondCmd,
 		// unbondCmd,
 		// rebondCmd,
@@ -78,15 +78,6 @@ var (
 			broadcastFlag,
 		},
 	}
-	/*	sendCmd = cli.Command{
-		Name:   "send",
-		Usage:  "mintx send --inputs <input1,input2,...> --outputs <output1,output2,...>",
-		Action: cliSend,
-		Flags: []cli.Flag{
-			inputsFlag,
-			outputsFlag,
-		},
-	}*/
 
 	nameCmd = cli.Command{
 		Name:   "name",
@@ -106,10 +97,28 @@ var (
 		},
 	}
 
+	callCmd = cli.Command{
+		Name:   "call",
+		Usage:  "mintx call --pubkey <pubkey> --amt <amt> --fee <fee> --gas <gas> --nonce <nonce> --to <contract addr> --data <data>",
+		Action: cliCall,
+		Flags: []cli.Flag{
+			pubkeyFlag,
+			amtFlag,
+			nonceFlag,
+			addrFlag,
+			toFlag,
+			dataFlag,
+			feeFlag,
+			gasFlag,
+			chainidFlag,
+			signFlag,
+			broadcastFlag,
+		},
+	}
+
 	signFlag = cli.StringFlag{
 		Name:  "sign",
 		Usage: "specify the rpc address of the signing daemon for signing the tx",
-		Value: DefaultKeyDaemonAddr,
 	}
 
 	broadcastFlag = cli.StringFlag{
@@ -155,6 +164,11 @@ var (
 	feeFlag = cli.StringFlag{
 		Name:  "fee",
 		Usage: "specify the fee to send",
+	}
+
+	gasFlag = cli.StringFlag{
+		Name:  "gas",
+		Usage: "specify the gas limit for a CallTx",
 	}
 
 	inputsFlag = cli.StringFlag{
