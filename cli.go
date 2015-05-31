@@ -22,24 +22,28 @@ func cliOutput(c *cli.Context) {
 }
 
 func cliSend(c *cli.Context) {
+	fmt.Println("signaddr:", c.String("sign-addr"))
 	chainID := c.String("chainID")
 	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
 	tx, err := coreSend(chainID, pubkey, addr, toAddr, amtS, nonceS)
 	ifExit(err)
 	fmt.Printf("%v\n", tx)
 
-	sign, broadcast := c.String("sign"), c.String("broadcast")
-	if sign != "" {
+	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
+	if sign {
+		signAddr := c.String("sign-addr")
+		fmt.Println("SIGN ADDR:", signAddr)
 		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
 		addrHex := fmt.Sprintf("%X", tx.Inputs[0].Address)
-		sig, err := coreSign(signBytes, addrHex, sign)
+		sig, err := coreSign(signBytes, addrHex, signAddr)
 		ifExit(err)
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Inputs[0].Signature = sigED
 		fmt.Printf("%X\n", sig)
 	}
-	if broadcast != "" {
-		receipt, err := coreBroadcast(tx, broadcast)
+	if broadcast {
+		broadcastAddr := c.String("node-addr")
+		receipt, err := coreBroadcast(tx, broadcastAddr)
 		ifExit(err)
 		fmt.Printf("%X\n", receipt.TxHash)
 	}
@@ -53,18 +57,20 @@ func cliName(c *cli.Context) {
 	tx, err := coreName(chainID, pubkey, addr, amtS, nonceS, feeS, name, data)
 	ifExit(err)
 	fmt.Printf("%v\n", tx)
-	sign, broadcast := c.String("sign"), c.String("broadcast")
-	if sign != "" {
+	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
+	if sign {
+		signAddr := c.String("sign-addr")
 		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
 		addrHex := fmt.Sprintf("%X", tx.Input.Address)
-		sig, err := coreSign(signBytes, addrHex, sign)
+		sig, err := coreSign(signBytes, addrHex, signAddr)
 		ifExit(err)
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Input.Signature = sigED
 		fmt.Printf("%X\n", sig)
 	}
-	if broadcast != "" {
-		receipt, err := coreBroadcast(tx, broadcast)
+	if broadcast {
+		broadcastAddr := c.String("node-addr")
+		receipt, err := coreBroadcast(tx, broadcastAddr)
 		ifExit(err)
 		fmt.Printf("%X\n", receipt.TxHash)
 	}
@@ -78,18 +84,20 @@ func cliCall(c *cli.Context) {
 	tx, err := coreCall(chainID, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
 	ifExit(err)
 	fmt.Printf("%v\n", tx)
-	sign, broadcast := c.String("sign"), c.String("broadcast")
-	if sign != "" {
+	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
+	if sign {
+		signAddr := c.String("sign-addr")
 		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
 		addrHex := fmt.Sprintf("%X", tx.Input.Address)
-		sig, err := coreSign(signBytes, addrHex, sign)
+		sig, err := coreSign(signBytes, addrHex, signAddr)
 		ifExit(err)
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Input.Signature = sigED
 		fmt.Printf("%X\n", sig)
 	}
-	if broadcast != "" {
-		receipt, err := coreBroadcast(tx, broadcast)
+	if broadcast {
+		broadcastAddr := c.String("node-addr")
+		receipt, err := coreBroadcast(tx, broadcastAddr)
 		ifExit(err)
 		fmt.Printf("%X\n", receipt.TxHash)
 	}
