@@ -25,9 +25,23 @@ func cliSend(c *cli.Context) {
 	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
 	tx, err := coreSend(chainID, pubkey, addr, toAddr, amtS, nonceS)
 	ifExit(err)
-	fmt.Printf("%s\n", tx)
+	fmt.Printf("%v\n", tx)
 
-	// TODO ...
+	sign, broadcast := c.String("sign"), c.String("broadcast")
+	if sign != "" {
+		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
+		addrHex := fmt.Sprintf("%X", tx.Inputs[0].Address)
+		sig, err := coreSign(signBytes, addrHex, sign)
+		ifExit(err)
+		sigED := account.SignatureEd25519(sig[:])
+		tx.Inputs[0].Signature = sigED
+		fmt.Printf("%X\n", sig)
+	}
+	if broadcast != "" {
+		receipt, err := coreBroadcast(tx, broadcast)
+		ifExit(err)
+		fmt.Printf("%X\n", receipt.TxHash)
+	}
 }
 
 func cliName(c *cli.Context) {
