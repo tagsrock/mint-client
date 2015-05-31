@@ -240,7 +240,6 @@ func main() {
 		// rebondCmd,
 		// dupeoutCmd,
 	}
-	fmt.Println(signAddrFlag)
 	app.Run(os.Args)
 
 }

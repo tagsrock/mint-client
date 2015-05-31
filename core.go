@@ -52,8 +52,8 @@ func coreOutput(addr, amtS string) ([]byte, error) {
 
 }
 
-func coreInput(pubkey, amtS, nonceS, addr string) ([]byte, error) {
-	pub, addrBytes, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
+func coreInput(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
+	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
 	}
@@ -74,8 +74,8 @@ func coreInput(pubkey, amtS, nonceS, addr string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func coreSend(chainID, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx, error) {
-	pub, addrBytes, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
+func coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx, error) {
+	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +97,8 @@ func coreSend(chainID, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx
 	return tx, nil
 }
 
-func coreCall(chainID, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data string) (*types.CallTx, error) {
-	pub, _, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
+func coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data string) (*types.CallTx, error) {
+	pub, _, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +127,8 @@ func coreCall(chainID, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data stri
 	return tx, nil
 }
 
-func coreName(chainID, pubkey, addr, amtS, nonceS, feeS, name, data string) (*types.NameTx, error) {
-	pub, _, amt, nonce, err := checkCommon(pubkey, addr, amtS, nonceS)
+func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*types.NameTx, error) {
+	pub, _, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +179,10 @@ func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
 	req.Header.Add("addr", signAddr)
 	sig, errS, err := requestResponse(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
 	}
 	if errS != "" {
-		return nil, fmt.Errorf("%s", errS)
+		return nil, fmt.Errorf("Error calling signing daemon: %s", errS)
 	}
 	sigBytes, err := hex.DecodeString(sig)
 	return sigBytes, err
@@ -190,21 +190,16 @@ func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
 
 func coreBroadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
 	client := cclient.NewClient(broadcastRPC, "JSONRPC")
-	rb, err := client.BroadcastTx(tx)
+	rec, err := client.BroadcastTx(tx)
 	if err != nil {
 		return nil, err
 	}
-	return &(rb.Receipt), nil
+	return rec, nil
 }
 
-func checkCommon(pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrBytes []byte, amt uint64, nonce uint64, err error) {
+func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrBytes []byte, amt uint64, nonce uint64, err error) {
 	if amtS == "" {
 		err = fmt.Errorf("input must specify an amount with the --amt flag")
-		return
-	}
-
-	if nonceS == "" {
-		err = fmt.Errorf("input must specify a nonce with the --nonce flag")
 		return
 	}
 
@@ -213,13 +208,11 @@ func checkCommon(pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrByt
 		return
 	}
 
-	fmt.Printf("PUBKEY %s\n", pubkey)
 	pubKeyBytes, err := hex.DecodeString(pubkey)
 	if err != nil {
 		err = fmt.Errorf("pubkey is bad hex: %v", err)
 		return
 	}
-	fmt.Printf("PUBKEY %X\n", pubKeyBytes)
 
 	addrBytes, err = hex.DecodeString(addr)
 	if err != nil {
@@ -232,15 +225,32 @@ func checkCommon(pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrByt
 		err = fmt.Errorf("amt is misformatted: %v", err)
 	}
 
-	nonce, err = strconv.ParseUint(nonceS, 10, 64)
-	if err != nil {
-		err = fmt.Errorf("nonce is misformatted: %v", err)
-		return
-	}
-
 	if len(pubKeyBytes) > 0 {
 		pub = account.PubKeyEd25519(pubKeyBytes)
 		addrBytes = pub.Address()
+	}
+
+	if nonceS == "" {
+		if nodeAddr == "" {
+			err = fmt.Errorf("input must specify a nonce with the --nonce flag or use --node-addr (or MINTX_NODE_ADDR) to fetch the nonce from a node")
+			return
+		}
+
+		// fetch nonce from node
+		client := cclient.NewClient(nodeAddr, "HTTP")
+		var ac *account.Account
+		ac, err = client.GetAccount(addrBytes)
+		if err != nil {
+			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err.Error())
+			return
+		}
+		nonce = uint64(ac.Sequence)
+	} else {
+		nonce, err = strconv.ParseUint(nonceS, 10, 64)
+		if err != nil {
+			err = fmt.Errorf("nonce is misformatted: %v", err)
+			return
+		}
 	}
 
 	return
