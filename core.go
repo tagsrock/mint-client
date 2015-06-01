@@ -244,7 +244,7 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err.Error())
 			return
 		}
-		nonce = uint64(ac.Sequence)
+		nonce = uint64(ac.Sequence) + 1
 	} else {
 		nonce, err = strconv.ParseUint(nonceS, 10, 64)
 		if err != nil {
