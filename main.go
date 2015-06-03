@@ -115,6 +115,11 @@ func main() {
 			Usage: "specify some data",
 		}
 
+		dataFileFlag = cli.StringFlag{
+			Name:  "data-file",
+			Usage: "specify a file with some data",
+		}
+
 		toFlag = cli.StringFlag{
 			Name:  "to",
 			Usage: "specify an address to send to",
@@ -171,6 +176,7 @@ func main() {
 				addrFlag,
 				nameFlag,
 				dataFlag,
+				dataFileFlag,
 				feeFlag,
 			},
 		}

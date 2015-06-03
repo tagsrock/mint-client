@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/codegangsta/cli"
 	"github.com/tendermint/tendermint/account"
 )
@@ -51,7 +53,15 @@ func cliName(c *cli.Context) {
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
 
-	name, data := c.String("name"), c.String("data")
+	if c.IsSet("data") && c.IsSet("data-file") {
+		exit(fmt.Errorf("Please specify only one of --data and --data-file"))
+	}
+	name, data, dataFile := c.String("name"), c.String("data"), c.String("data-file")
+	if data == "" && dataFile != "" {
+		b, err := ioutil.ReadFile(dataFile)
+		ifExit(err)
+		data = string(b)
+	}
 	tx, err := coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data)
 	ifExit(err)
 	fmt.Printf("%v\n", tx)
