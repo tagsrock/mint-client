@@ -79,5 +79,5 @@ func cliCatchup(cobraCmd *cobra.Command, args []string) {
 }
 
 func cliRun(cmd *cobra.Command, args []string) {
-
+	<-make(chan struct{})
 }
