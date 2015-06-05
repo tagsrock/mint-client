@@ -27,6 +27,7 @@ var (
 var (
 	nodeAddrFlag        string
 	tinydnsDataFileFlag string
+	updateEveryFlag     int
 )
 
 func main() {
@@ -52,7 +53,8 @@ func main() {
 		Long:  "",
 		Run:   cliRun,
 	}
-	runCmd.Flags().StringVarP(&tinydnsDataFileFlag, "tinydns-data", "d", "test-data", "path to tinydns data file")
+	runCmd.Flags().StringVarP(&tinydnsDataFileFlag, "tinydns-data", "d", DefaultTinyDNSData, "path to tinydns data file")
+	runCmd.Flags().IntVarP(&updateEveryFlag, "update-every", "u", 60, "number of seconds to wait before updating from chain")
 
 	var rootCmd = &cobra.Command{Use: "mindy"}
 	rootCmd.Flags().StringVarP(&nodeAddrFlag, "node-addr", "a", DefaultNodeRPCAddr, "full address of rpc host")
