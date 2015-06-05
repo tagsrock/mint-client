@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"os"
 	"path"
 
-	cclient "github.com/tendermint/tendermint/rpc/core_client"
+	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 
 	DefaultChainID string
 
-	DefaultTinyDNSDir  = "/etc/services/tinydns/root"
+	DefaultTinyDNSDir  = "/etc/service/tinydns/root"
 	DefaultTinyDNSData = path.Join(DefaultTinyDNSDir, "data")
 
 	REQUEST_TYPE = "JSONRPC"

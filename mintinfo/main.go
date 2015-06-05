@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codegangsta/cli"
-	cclient "github.com/tendermint/tendermint/rpc/core_client"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
 var (

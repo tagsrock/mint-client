@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/codegangsta/cli"
-	"github.com/tendermint/tendermint/binary"
-	"github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 func prettyPrint(o interface{}) (string, error) {

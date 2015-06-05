@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 func validateDNSEntrySimple(entry *types.NameRegEntry) error {
@@ -56,9 +56,15 @@ func cliCatchup(cobraCmd *cobra.Command, args []string) {
 	// if fails, run add-alias
 	// TODO: parse/update the data file manually?
 	for _, entry := range dnsEntries {
+		fmt.Println("Running add host", entry.Name, entry.Data, "...")
 		cmd := exec.Command("./add-host", entry.Name, entry.Data)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
+			fmt.Println("\t ... running add-alias")
 			cmd := exec.Command("./add-alias", entry.Name, entry.Data)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 			err := cmd.Run()
 			ifExit(err)
 		}
@@ -66,6 +72,8 @@ func cliCatchup(cobraCmd *cobra.Command, args []string) {
 
 	// done adding entries. commit the,
 	cmd := exec.Command("make")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	ifExit(err)
 }

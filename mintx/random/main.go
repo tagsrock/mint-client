@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/tendermint/tendermint/account"
-	cclient "github.com/tendermint/tendermint/rpc/core_client"
-	"github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 
 	//cfg "github.com/tendermint/tendermint/config"
 	//tmcfg "github.com/tendermint/tendermint/config/tendermint"
@@ -64,7 +64,7 @@ func main() {
 		case "CallTx":
 			// randomCallTx()
 		case "NameTx":
-			randomNameTx()
+			// randomNameTx()
 		case "BondTx":
 			// randomBondTx()
 		}
@@ -74,13 +74,13 @@ func main() {
 		}
 
 		fmt.Println("Tx:", tx)
-		rb, err := client.BroadcastTx(tx)
+		rec, err := client.BroadcastTx(tx)
 		if err != nil {
 			fmt.Println("Err on broadcast", err)
 			*errs += 1
 			continue
 		}
-		fmt.Printf("TxID: %X\n", rb.Receipt.TxHash)
+		fmt.Printf("TxID: %X\n", rec.TxHash)
 	}
 }
 
@@ -89,13 +89,13 @@ func pickAccountNonceAmount(errs *int) (*account.PrivAccount, int, uint, uint64)
 	i := rand.Intn(len(keys))
 	privAcc := keys[i]
 
-	r, err := client.GetAccount(privAcc.Address)
+	acc, err := client.GetAccount(privAcc.Address)
 	if err != nil {
 		fmt.Println("Err on get account:", err)
 		*errs += 1
 		return nil, 0, 0, 0
 	}
-	nonce := r.Account.Sequence
+	nonce := acc.Sequence
 
 	maxAmt := 100
 	amt := uint64(rand.Intn(maxAmt))
@@ -114,7 +114,7 @@ func randomSendTx(errs *int) types.Tx {
 	}
 
 	tx := types.NewSendTx()
-	tx.AddInputWithNonce(acc.PubKey, amt, uint64(nonce))
+	tx.AddInputWithNonce(acc.PubKey, amt, nonce)
 
 	// pick receiver
 	j := rand.Intn(len(keys))
