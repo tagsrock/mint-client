@@ -9,9 +9,9 @@ import (
 type TinyDNSData map[string]*ResourceRecord
 
 type ResourceRecord struct {
-	Type    string
-	FQDN    string
-	Address string
+	Type    string `json:"type"`
+	FQDN    string `json:"fqdn"`
+	Address string `json:"address"`
 }
 
 func TinyDNSDataFromFile(file string) (TinyDNSData, error) {
@@ -35,11 +35,9 @@ func TinyDNSDataFromFile(file string) (TinyDNSData, error) {
 		var typ string
 		switch first {
 		case ".":
-			typ = "ns"
-		case "=":
-			typ = "host"
-		case "+":
-			typ = "alias"
+			typ = "NS"
+		case "=", "+":
+			typ = "A"
 		case "#":
 			continue
 		default:
