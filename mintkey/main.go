@@ -11,7 +11,7 @@ import (
 var (
 	usr, _ = user.Current()
 
-	DefaultKeyStore = path.Join(usr.HomeDir, ".decerver", "keys")
+	DefaultKeyStore = path.Join(usr.HomeDir, ".eris", "keys")
 )
 
 func main() {
