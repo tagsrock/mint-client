@@ -87,7 +87,7 @@ func cliCall(c *cli.Context) {
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
 
-	toAddr, gasS, data := c.String("name"), c.String("gas"), c.String("data")
+	toAddr, gasS, data := c.String("to"), c.String("gas"), c.String("data")
 	tx, err := coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
 	ifExit(err)
 	fmt.Printf("%v\n", tx)
