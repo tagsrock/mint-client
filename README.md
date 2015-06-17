@@ -41,7 +41,7 @@ Open your `~/.bashrc` and paste in the following
 export MINTX_SIGN_ADDR=http://localhost:4767
 export MINTX_NODE_ADDR=http://pinkpenguin.chaintest.net:46657/
 export MINTX_PUBKEY=<PUBKEY>
-export MINTX_CHAINID=tendermint_testnet_5e
+export MINTX_CHAINID=etcb_testnet
 ```
 
 where `<PUBKEY>` is the output of the `eris-keys pub` command.
