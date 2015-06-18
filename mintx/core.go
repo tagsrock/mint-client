@@ -16,7 +16,8 @@ import (
 )
 
 //------------------------------------------------------------------------------------
-// core functions with string args, pertaining to a subcommand
+// core functions with string args.
+// validates strings and forms transaction
 
 func coreOutput(addr, amtS string) ([]byte, error) {
 	if amtS == "" {
@@ -49,7 +50,6 @@ func coreOutput(addr, amtS string) ([]byte, error) {
 		return nil, *errPtr
 	}
 	return buf.Bytes(), nil
-
 }
 
 func coreInput(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
@@ -142,7 +142,103 @@ func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*t
 	return tx, nil
 }
 
+func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, error) {
+	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, "", amtS, nonceS)
+	if err != nil {
+		return nil, err
+	}
+
+	if unbondAddr == "" {
+		return nil, fmt.Errorf("Unbond address must be given with --unbond-to flag")
+	}
+
+	unbondAddrBytes, err := hex.DecodeString(unbondAddr)
+	if err != nil {
+		return nil, fmt.Errorf("unbondAddr is bad hex: %v", err)
+	}
+
+	tx, err := types.NewBondTx(pub)
+	if err != nil {
+		return nil, err
+	}
+	_ = addrBytes
+	tx.AddInputWithNonce(pub, amt, uint(nonce))
+	tx.AddOutput(unbondAddrBytes, amt)
+
+	return tx, nil
+}
+
+func coreUnbond(addrS, heightS string) (*types.UnbondTx, error) {
+	if addrS == "" {
+		return nil, fmt.Errorf("Validator address must be given with --addr flag")
+	}
+
+	addrBytes, err := hex.DecodeString(addrS)
+	if err != nil {
+		return nil, fmt.Errorf("addr is bad hex: %v", err)
+	}
+
+	height, err := strconv.ParseUint(heightS, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("height is misformatted: %v", err)
+	}
+
+	return &types.UnbondTx{
+		Address: addrBytes,
+		Height:  uint(height),
+	}, nil
+}
+
+func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
+	if addrS == "" {
+		return nil, fmt.Errorf("Validator address must be given with --addr flag")
+	}
+
+	addrBytes, err := hex.DecodeString(addrS)
+	if err != nil {
+		return nil, fmt.Errorf("addr is bad hex: %v", err)
+	}
+
+	height, err := strconv.ParseUint(heightS, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("height is misformatted: %v", err)
+	}
+
+	return &types.RebondTx{
+		Address: addrBytes,
+		Height:  uint(height),
+	}, nil
+}
+
 //------------------------------------------------------------------------------------
+// sign and broadcast
+
+func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
+	req, _ := http.NewRequest("GET", signRPC+"/sign", nil)
+	req.Header.Add("hash", signBytes)
+	req.Header.Add("addr", signAddr)
+	sig, errS, err := requestResponse(req)
+	if err != nil {
+		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
+	}
+	if errS != "" {
+		return nil, fmt.Errorf("Error calling signing daemon: %s", errS)
+	}
+	sigBytes, err := hex.DecodeString(sig)
+	return sigBytes, err
+}
+
+func coreBroadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
+	client := cclient.NewClient(broadcastRPC, "JSONRPC")
+	rec, err := client.BroadcastTx(tx)
+	if err != nil {
+		return nil, err
+	}
+	return rec, nil
+}
+
+//------------------------------------------------------------------------------------
+// utils for talking to the key server
 
 type HTTPResponse struct {
 	Response string
@@ -173,29 +269,8 @@ func unpackResponse(resp *http.Response) (string, string, error) {
 	return r.Response, r.Error, nil
 }
 
-func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
-	req, _ := http.NewRequest("GET", signRPC+"/sign", nil)
-	req.Header.Add("hash", signBytes)
-	req.Header.Add("addr", signAddr)
-	sig, errS, err := requestResponse(req)
-	if err != nil {
-		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
-	}
-	if errS != "" {
-		return nil, fmt.Errorf("Error calling signing daemon: %s", errS)
-	}
-	sigBytes, err := hex.DecodeString(sig)
-	return sigBytes, err
-}
-
-func coreBroadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
-	client := cclient.NewClient(broadcastRPC, "JSONRPC")
-	rec, err := client.BroadcastTx(tx)
-	if err != nil {
-		return nil, err
-	}
-	return rec, nil
-}
+//------------------------------------------------------------------------------------
+// convenience function
 
 func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrBytes []byte, amt uint64, nonce uint64, err error) {
 	if amtS == "" {

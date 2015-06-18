@@ -135,72 +135,142 @@ func main() {
 			Usage: "specify the gas limit for a CallTx",
 		}
 
+		unbondtoFlag = cli.StringFlag{
+			Name:  "unbond-to",
+			Usage: "specify an address to unbond to",
+		}
+
+		heightFlag = cli.StringFlag{
+			Name:  "height",
+			Usage: "specify a height to unbond at",
+		}
+
 		//------------------------------------------------------------
 		// main tx commands
 
 		sendCmd = cli.Command{
 			Name:   "send",
-			Usage:  "mintx send --pubkey <pubkey> --amt <amt> --nonce <nonce> --to <addr>",
+			Usage:  "mintx send --amt <amt> --to <addr>",
 			Action: cliSend,
 			Flags: []cli.Flag{
 				signAddrFlag,
 				nodeAddrFlag,
-				pubkeyFlag,
+
 				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
 
 				signFlag,
 				broadcastFlag,
 
 				amtFlag,
-				nonceFlag,
-				addrFlag,
 				toFlag,
+				nonceFlag,
 			},
 		}
 
 		nameCmd = cli.Command{
 			Name:   "name",
-			Usage:  "mintx name --pubkey <pubkey> --amt <amt> --nonce <nonce> --name <name> --data <data>",
+			Usage:  "mintx name --amt <amt> --name <name> --data <data>",
 			Action: cliName,
 			Flags: []cli.Flag{
 				signAddrFlag,
 				nodeAddrFlag,
-				pubkeyFlag,
+
 				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
 
 				signFlag,
 				broadcastFlag,
 
 				amtFlag,
-				nonceFlag,
-				addrFlag,
 				nameFlag,
 				dataFlag,
 				dataFileFlag,
 				feeFlag,
+				nonceFlag,
 			},
 		}
 
 		callCmd = cli.Command{
 			Name:   "call",
-			Usage:  "mintx call --pubkey <pubkey> --amt <amt> --fee <fee> --gas <gas> --nonce <nonce> --to <contract addr> --data <data>",
+			Usage:  "mintx call --amt <amt> --fee <fee> --gas <gas> --to <contract addr> --data <data>",
 			Action: cliCall,
 			Flags: []cli.Flag{
 				signAddrFlag,
 				nodeAddrFlag,
-				pubkeyFlag,
+
 				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
 
 				signFlag,
 				broadcastFlag,
 
 				amtFlag,
-				nonceFlag,
-				addrFlag,
 				toFlag,
 				dataFlag,
 				feeFlag,
 				gasFlag,
+				nonceFlag,
+			},
+		}
+
+		bondCmd = cli.Command{
+			Name:   "bond",
+			Usage:  "mintx bond --pubkey <pubkey> --amt <amt> --unbond-to <address>",
+			Action: cliBond,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
+
+				signFlag,
+				broadcastFlag,
+
+				amtFlag,
+				unbondtoFlag,
+				nonceFlag,
+			},
+		}
+
+		unbondCmd = cli.Command{
+			Name:   "unbond",
+			Usage:  "mintx unbond --addr <address> --height <block_height>",
+			Action: cliUnbond,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+
+				signFlag,
+				broadcastFlag,
+
+				addrFlag,
+				heightFlag,
+			},
+		}
+
+		rebondCmd = cli.Command{
+			Name:   "rebond",
+			Usage:  "mintx rebond --addr <address> --height <block_height>",
+			Action: cliRebond,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+
+				signFlag,
+				broadcastFlag,
+
+				addrFlag,
+				heightFlag,
 			},
 		}
 
@@ -241,9 +311,9 @@ func main() {
 		sendCmd,
 		nameCmd,
 		callCmd,
-		// bondCmd,
-		// unbondCmd,
-		// rebondCmd,
+		bondCmd,
+		unbondCmd,
+		rebondCmd,
 		// dupeoutCmd,
 	}
 	app.Run(os.Args)
