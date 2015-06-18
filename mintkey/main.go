@@ -15,11 +15,22 @@ var (
 )
 
 func main() {
-	var rootCmd = &cobra.Command{
-		Use:   "mintkey",
+	var erisToMintCmd = &cobra.Command{
+		Use:   "mint",
 		Short: "Convert an eris-keys key to a priv_validator.json",
-		Run:   cliConvertAddressToPrivValidator,
+		Long:  "mintkey mint <address>",
+		Run:   cliConvertErisKeyToPrivValidator,
 	}
+
+	var mintToErisCmd = &cobra.Command{
+		Use:   "eris",
+		Short: "Convert a priv_validator.json to an eris-keys key",
+		Long:  "mintkey ers <path/to/priv_validator.json>",
+		Run:   cliConvertPrivValidatorToErisKey,
+	}
+
+	var rootCmd = &cobra.Command{Use: "mintkey"}
+	rootCmd.AddCommand(mintToErisCmd, erisToMintCmd)
 	rootCmd.Execute()
 }
 
