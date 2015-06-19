@@ -9,11 +9,10 @@ import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types" // for GlobalPermissionAddress ...
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
 )
 
-// for GlobalPermissionAddress ...
 // NOTE: If an error occurs during block execution, state will be left
 // at an invalid state.  Copy the state before calling ExecBlock!
 func ExecBlock(s *State, block *types.Block, blockPartsHeader types.PartSetHeader) error {

@@ -14,10 +14,9 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/syndtr/goleveldb/leveldb/storage"
 )
 
-// Logging.
-
 type dropper struct {
-	s    *session
+	s *session
+	// Logging.
 	file storage.File
 }
 
@@ -182,7 +181,7 @@ func (s *session) newManifest(rec *sessionRecord, v *version) (err error) {
 		defer v.release()
 	}
 	if rec == nil {
-		rec = &sessionRecord{}
+		rec = &sessionRecord{numLevel: s.o.GetNumLevel()}
 	}
 	s.fillRecord(rec, true)
 	v.fillRecord(rec)
