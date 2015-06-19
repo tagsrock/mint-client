@@ -1,0 +1,8 @@
+=============== Jun 18, 2015 (EDT) ===============
+20:01:04.322241 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+20:01:04.322589 db@open opening
+20:01:04.322663 journal@recovery F·1
+20:01:04.323086 journal@recovery recovering @6
+20:01:04.332697 mem@flush created L0@8 N·1324 S·313KiB "H:2412,v12056":"blo..ore,v12055"
+20:01:04.334203 db@janitor F·4 G·0
+20:01:04.334225 db@open done T·11.62177ms
