@@ -1,9 +1,8 @@
 package merkle
 
 import (
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
-
 	"bytes"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"testing"
 )
 

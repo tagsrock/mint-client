@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eris-ltd/mint-client/mintperms/Godeps/_workspace/src/github.com/spf13/cobra"
-	"github.com/eris-ltd/mint-client/mintperms/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
 
 func cliStringsToInts(cmd *cobra.Command, args []string) {

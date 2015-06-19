@@ -1,11 +1,10 @@
 package state
 
 import (
+	"bytes"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	_ "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint_test"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-
-	"bytes"
 	"testing"
 	"time"
 )

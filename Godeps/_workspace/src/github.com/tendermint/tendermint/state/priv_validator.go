@@ -9,13 +9,12 @@ import (
 	"math"
 	"sync"
 
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
 )
 
 const (

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mint-client/mintperms/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"os"
 	"os/user"
 	"path"

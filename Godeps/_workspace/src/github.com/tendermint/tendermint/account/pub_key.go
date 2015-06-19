@@ -7,8 +7,8 @@ import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 )
 
-// PubKey is part of Account and Validator.
-type PubKey interface {
+type PubKey interface // PubKey is part of Account and Validator.
+{
 	IsNil() bool
 	Address() []byte
 	VerifyBytes(msg []byte, sig Signature) bool
