@@ -17,6 +17,8 @@ import (
 
 var TestDir = path.Join(os.Getenv("GOPATH"), "src", "github.com", "eris-ltd", "mint-client", "mintdump", "test")
 
+/*
+// XXX: Keeping leveldb files in version control is not nice ....
 func TestDumpRestore(t *testing.T) {
 	// load a test dir
 	config.Set("db_dir", path.Join(TestDir, "data1"))
@@ -37,6 +39,7 @@ func TestDumpRestore(t *testing.T) {
 		t.Fatalf("State hash mismatch. Got %X, expected %X", st.Hash(), stHash)
 	}
 }
+*/
 
 func TestRestoreDump(t *testing.T) {
 	b, err := ioutil.ReadFile(path.Join(TestDir, "data1.json"))

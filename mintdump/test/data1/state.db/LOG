@@ -1,8 +1,0 @@
-=============== Jun 20, 2015 (EDT) ===============
-12:48:17.934374 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-12:48:17.934768 db@open opening
-12:48:17.934846 journal@recovery F·1
-12:48:17.935114 journal@recovery recovering @8
-12:48:17.936138 mem@flush created L0@10 N·62 S·3KiB "\x03{\xec..&\x9d\xfa,v105":"\xef\xd5\x1c..?\xe3S,v70"
-12:48:17.939119 db@janitor F·5 G·0
-12:48:17.939141 db@open done T·4.35877ms

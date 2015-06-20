@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
@@ -12,10 +11,9 @@ import (
 )
 
 var (
-	usr, _ = user.Current()
+	config = tmcfg.GetConfig("")
 
-	DefaultDir = path.Join(usr.HomeDir, ".tendermint")
-	config     = tmcfg.GetConfig("")
+	DataDirFlag string
 )
 
 func init() {
@@ -23,9 +21,11 @@ func init() {
 }
 
 func main() {
+
 	var dumpCmd = &cobra.Command{
 		Use:   "dump",
 		Short: "Dump tendermint state to json files",
+		Long:  "mintdump dump > <json file>",
 		Run:   cliDump,
 	}
 	var restoreCmd = &cobra.Command{
@@ -34,10 +34,23 @@ func main() {
 		Long:  "mintdump restore <path/to/file> <new chainID>",
 		Run:   cliRestore,
 	}
+	dumpCmd.Flags().StringVarP(&DataDirFlag, "data-dir", "d", "", "Path to tendermint data directory")
+	restoreCmd.Flags().StringVarP(&DataDirFlag, "data-dir", "d", "", "Path to tendermint data directory")
 
 	var rootCmd = &cobra.Command{Use: "mintdump"}
+	rootCmd.PersistentPreRun = before
 	rootCmd.AddCommand(dumpCmd, restoreCmd)
 	rootCmd.Execute()
+}
+
+func before(cmd *cobra.Command, args []string) {
+	if DataDirFlag != "" {
+		if _, err := os.Stat(path.Join(DataDirFlag, "state.db")); err != nil {
+			exit(fmt.Errorf("Could not find state.db folder in %s", DataDirFlag))
+		}
+		config.Set("db_dir", DataDirFlag)
+		cfg.ApplyConfig(config)
+	}
 }
 
 func exit(err error) {

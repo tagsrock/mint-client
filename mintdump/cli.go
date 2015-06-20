@@ -9,7 +9,6 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
-	cfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
 	sm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
@@ -138,7 +137,7 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 // cli wrappers
 
 func cliRestore(cmd *cobra.Command, args []string) {
-	if len(args) != 0 {
+	if len(args) != 2 {
 		exit(fmt.Errorf("Enter the path to a json file containing a state dump, followed by the new chain id"))
 	}
 	file, chainID := args[0], args[1]
@@ -155,11 +154,6 @@ func cliRestore(cmd *cobra.Command, args []string) {
 }
 
 func cliDump(cmd *cobra.Command, args []string) {
-	if len(args) > 0 {
-		config.Set("db_dir", args[0])
-		cfg.ApplyConfig(config) // Notify modules of new config
-	}
-
 	fmt.Println(string(CoreDump()))
 }
 
