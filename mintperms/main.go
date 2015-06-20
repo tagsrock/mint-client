@@ -27,9 +27,19 @@ func main() {
 		Long:  "Example: mintperms string 2 6",
 		Run:   cliIntsToStrings,
 	}
+	var bbpbCmd = &cobra.Command{
+		Use:   "bbpb",
+		Short: "Print the permissions for a BBPB",
+		Run:   cliBBPB,
+	}
+	var allCmd = &cobra.Command{
+		Use:   "all",
+		Short: "Print the PermFlag and SetBit for all permissions on and set",
+		Run:   cliAll,
+	}
 
 	var rootCmd = &cobra.Command{Use: "mintperms"}
-	rootCmd.AddCommand(stringsToIntsCmd, intsToStringsCmd)
+	rootCmd.AddCommand(stringsToIntsCmd, intsToStringsCmd, bbpbCmd, allCmd)
 	rootCmd.Execute()
 }
 

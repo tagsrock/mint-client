@@ -34,6 +34,19 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 	fmt.Printf("%b\t%b\n", bp.Perms, bp.SetBit)
 }
 
+func coreIntsToStrings(perms, setbits types.PermFlag) map[string]bool {
+	m := make(map[string]bool)
+
+	for i := uint(0); i < types.NumBasePermissions; i++ {
+		pf := types.PermFlag(1 << i)
+		if pf&setbits > 0 {
+			name, _ := types.PermFlagToString(pf)
+			m[name] = pf&perms > 0
+		}
+	}
+	return m
+}
+
 func cliIntsToStrings(cmd *cobra.Command, args []string) {
 	cmd.ParseFlags(args)
 	if len(args) != 2 {
@@ -46,15 +59,35 @@ func cliIntsToStrings(cmd *cobra.Command, args []string) {
 	setbits, err := strconv.Atoi(sb)
 	ifExit(err)
 
-	m := make(map[string]bool)
-
-	for i := uint(0); i < types.NumBasePermissions; i++ {
-		pf := 1 << i
-		if pf&setbits > 0 {
-			name, _ := types.PermFlagToString(types.PermFlag(pf))
-			m[name] = pf&perms > 0
-		}
+	m := coreIntsToStrings(types.PermFlag(perms), types.PermFlag(setbits))
+	for name, v := range m {
+		fmt.Printf("%s: %v\n", name, v)
 	}
+}
+
+func cliBBPB(cmd *cobra.Command, args []string) {
+	pf := types.DefaultBBPB
+	fmt.Println("Perms and SetBit (As Integers)")
+	fmt.Printf("%d\t%d\n", pf, pf)
+	fmt.Println("\nPerms and SetBit (As Bitmasks)")
+	fmt.Printf("%b\t%b\n", pf, pf)
+
+	m := coreIntsToStrings(pf, pf)
+
+	for name, v := range m {
+		fmt.Printf("%s: %v\n", name, v)
+	}
+}
+
+func cliAll(cmd *cobra.Command, args []string) {
+	pf := types.AllSet
+	fmt.Println("Perms and SetBit (As Integers)")
+	fmt.Printf("%d\t%d\n", pf, pf)
+	fmt.Println("\nPerms and SetBit (As Bitmasks)")
+	fmt.Printf("%b\t%b\n", pf, pf)
+
+	m := coreIntsToStrings(pf, pf)
+
 	for name, v := range m {
 		fmt.Printf("%s: %v\n", name, v)
 	}

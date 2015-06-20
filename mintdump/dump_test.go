@@ -17,7 +17,7 @@ import (
 
 var TestDir = path.Join(os.Getenv("GOPATH"), "src", "github.com", "eris-ltd", "mint-client", "mintdump", "test")
 
-func _TestDumpRestore(t *testing.T) {
+func TestDumpRestore(t *testing.T) {
 	// load a test dir
 	config.Set("db_dir", path.Join(TestDir, "data1"))
 	cfg.ApplyConfig(config) // Notify modules of new config
