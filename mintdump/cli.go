@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
@@ -23,6 +24,9 @@ func CoreDump() []byte {
 	// Get State
 	stateDB := dbm.GetDB("state")
 	st := sm.LoadState(stateDB)
+	if st == nil {
+		exit(fmt.Errorf("Error: state loaded from %s is nil!", config.GetString("db_dir")))
+	}
 
 	stJ := new(State)
 	stJ.BondedValidators = st.BondedValidators
@@ -137,12 +141,16 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 // cli wrappers
 
 func cliRestore(cmd *cobra.Command, args []string) {
-	if len(args) != 2 {
-		exit(fmt.Errorf("Enter the path to a json file containing a state dump, followed by the new chain id"))
+	if len(args) != 1 {
+		exit(fmt.Errorf("Enter the chain id"))
 	}
-	file, chainID := args[0], args[1]
+	chainID := args[0]
 
-	b, err := ioutil.ReadFile(file)
+	fi, _ := os.Stdin.Stat()
+	if fi.Size() == 0 {
+		exit(fmt.Errorf("Please pass data to restore on Stdin"))
+	}
+	b, err := ioutil.ReadAll(os.Stdin)
 	ifExit(err)
 
 	CoreRestore(chainID, b)

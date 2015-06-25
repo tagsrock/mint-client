@@ -25,13 +25,13 @@ func main() {
 	var dumpCmd = &cobra.Command{
 		Use:   "dump",
 		Short: "Dump tendermint state to json files",
-		Long:  "mintdump dump > <json file>",
+		Long:  "mintdump dump > [json file]",
 		Run:   cliDump,
 	}
 	var restoreCmd = &cobra.Command{
 		Use:   "restore",
 		Short: "Restore tendermint state from json files",
-		Long:  "mintdump restore <path/to/file> <new chainID>",
+		Long:  "mintdump restore [new chainID] < [path/to/file] ",
 		Run:   cliRestore,
 	}
 	dumpCmd.Flags().StringVarP(&DataDirFlag, "data-dir", "d", "", "Path to tendermint data directory")
