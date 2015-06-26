@@ -1,16 +1,5 @@
 # Pull base image.
-FROM golang:1.4.2-wheezy
-
-ENV user tendermint
-ENV data_root /data/tendermint
-
-# set user right away for determinism
-RUN groupadd -r $user \
-  && useradd -r -s /bin/false -g $user $user
-
-# create directory for persistence and give our user ownership
-RUN mkdir -p $data_root \
-  && chown -R $user:$user $data_root
+FROM eris/base
 
 # Set the env variables to non-interactive
 ENV DEBIAN_FRONTEND noninteractive
@@ -32,9 +21,7 @@ WORKDIR $repo
 RUN go install ./...
 
 # set user
-USER tendermint
-ENV TMROOT $data_root
-
-# run tendermint
-CMD ["mintinfo status"]
-
+USER $USER
+ENV TMROOT /home/eris/.eris/
+WORKDIR /home/eris
+CMD ["mintx"]
