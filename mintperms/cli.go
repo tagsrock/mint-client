@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
@@ -12,7 +13,7 @@ import (
 func cliStringsToInts(cmd *cobra.Command, args []string) {
 	cmd.ParseFlags(args)
 	if len(args) == 0 {
-		exit(fmt.Errorf("Please enter at least one `<permission>:<value>` pair like `send:0 call:1 create_account:1`"))
+		Exit(fmt.Errorf("Please enter at least one `<permission>:<value>` pair like `send:0 call:1 create_account:1`"))
 	}
 
 	bp := types.NewBasePermissions()
@@ -20,12 +21,12 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 	for _, a := range args {
 		spl := strings.Split(a, ":")
 		if len(spl) != 2 {
-			exit(fmt.Errorf("arguments must be like `send:1`, not %s", a))
+			Exit(fmt.Errorf("arguments must be like `send:1`, not %s", a))
 		}
 		name, v := spl[0], spl[1]
 		vi := v[0] - '0'
 		pf, err := types.PermStringToFlag(name)
-		ifExit(err)
+		IfExit(err)
 		bp.Set(pf, vi > 0)
 	}
 	fmt.Println("Perms and SetBit (As Integers)")
@@ -50,14 +51,14 @@ func coreIntsToStrings(perms, setbits types.PermFlag) map[string]bool {
 func cliIntsToStrings(cmd *cobra.Command, args []string) {
 	cmd.ParseFlags(args)
 	if len(args) != 2 {
-		exit(fmt.Errorf("Please enter PermFlag and SetBit integers"))
+		Exit(fmt.Errorf("Please enter PermFlag and SetBit integers"))
 	}
 
 	pf, sb := args[0], args[1]
 	perms, err := strconv.Atoi(pf)
-	ifExit(err)
+	IfExit(err)
 	setbits, err := strconv.Atoi(sb)
-	ifExit(err)
+	IfExit(err)
 
 	m := coreIntsToStrings(types.PermFlag(perms), types.PermFlag(setbits))
 	for name, v := range m {

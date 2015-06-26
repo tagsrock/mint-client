@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
@@ -25,7 +26,7 @@ func CoreDump() []byte {
 	stateDB := dbm.GetDB("state")
 	st := sm.LoadState(stateDB)
 	if st == nil {
-		exit(fmt.Errorf("Error: state loaded from %s is nil!", config.GetString("db_dir")))
+		Exit(fmt.Errorf("Error: state loaded from %s is nil!", config.GetString("db_dir")))
 	}
 
 	stJ := new(State)
@@ -76,7 +77,7 @@ func CoreDump() []byte {
 
 	w, n, err := new(bytes.Buffer), new(int64), new(error)
 	binary.WriteJSON(stJ, w, n, err)
-	ifExit(*err)
+	IfExit(*err)
 	w2 := new(bytes.Buffer)
 	json.Indent(w2, w.Bytes(), "", "\t")
 	return w2.Bytes()
@@ -88,7 +89,7 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 	var stJ State
 	var err error
 	binary.ReadJSON(&stJ, jsonBytes, &err)
-	ifExit(err)
+	IfExit(err)
 
 	st := new(sm.State)
 
@@ -142,16 +143,16 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 
 func cliRestore(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		exit(fmt.Errorf("Enter the chain id"))
+		Exit(fmt.Errorf("Enter the chain id"))
 	}
 	chainID := args[0]
 
 	fi, _ := os.Stdin.Stat()
 	if fi.Size() == 0 {
-		exit(fmt.Errorf("Please pass data to restore on Stdin"))
+		Exit(fmt.Errorf("Please pass data to restore on Stdin"))
 	}
 	b, err := ioutil.ReadAll(os.Stdin)
-	ifExit(err)
+	IfExit(err)
 
 	CoreRestore(chainID, b)
 

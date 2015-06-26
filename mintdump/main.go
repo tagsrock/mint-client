@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	cfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	tmcfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint"
@@ -46,20 +47,9 @@ func main() {
 func before(cmd *cobra.Command, args []string) {
 	if DataDirFlag != "" {
 		if _, err := os.Stat(path.Join(DataDirFlag, "state.db")); err != nil {
-			exit(fmt.Errorf("Could not find state.db folder in %s", DataDirFlag))
+			Exit(fmt.Errorf("Could not find state.db folder in %s", DataDirFlag))
 		}
 		config.Set("db_dir", DataDirFlag)
 		cfg.ApplyConfig(config)
-	}
-}
-
-func exit(err error) {
-	fmt.Println(err)
-	os.Exit(1)
-}
-
-func ifExit(err error) {
-	if err != nil {
-		exit(err)
 	}
 }

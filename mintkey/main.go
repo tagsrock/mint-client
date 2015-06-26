@@ -2,16 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"os"
 	"os/user"
 	"path"
+
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
 var (
 	usr, _ = user.Current()
 
-	DefaultKeyStore = path.Join(usr.HomeDir, ".eris", "keys")
+	DefaultKeyStore = common.KeysPath
 )
 
 func main() {

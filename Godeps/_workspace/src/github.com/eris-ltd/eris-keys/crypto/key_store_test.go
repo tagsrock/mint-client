@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"github.com/eris-ltd/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
 	"reflect"
 	"testing"
 )
