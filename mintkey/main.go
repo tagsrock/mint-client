@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"

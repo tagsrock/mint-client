@@ -89,67 +89,67 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/account",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/binary",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/common",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/config",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/consensus/types",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/db",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/events",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/logger",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/merkle",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/permission/types",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/core/types",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/core_client",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/types",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/state",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/types",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/vm",
-			"Rev": "93301712356a600326f52c413f2c961a4a78de0f"
+			"Rev": "e4b28121bca8817799333123fdfae8b03e5251a3"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/pbkdf2",
