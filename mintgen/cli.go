@@ -17,6 +17,18 @@ import (
 
 //------------------------------------------------------------------------------
 
+var defaultConfig = `# This is a TOML config file.
+# For more information, see https://github.com/toml-lang/toml
+
+moniker = "__MONIKER__"
+node_laddr = "0.0.0.0:46656"
+seeds = ""
+fast_sync = false
+db_backend = "leveldb"
+log_level = "debug"
+rpc_laddr = "0.0.0.0:46657"
+`
+
 func singleUserChain(dir string) {
 	genDoc, _, validators := state.RandGenesisDoc(1, true, 1000000000, 1, false, 1000000)
 
@@ -42,8 +54,9 @@ func singleUserChain(dir string) {
 	binary.WriteJSON(v, buf, n, err)
 	IfExit(*err)
 	valBytes := buf.Bytes()
-	IfExit(ioutil.WriteFile(path.Join(dir, fmt.Sprintf("priv_validator.json")), valBytes, 0600))
-	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", dir)
+	IfExit(ioutil.WriteFile(path.Join(dir, "priv_validator.json"), valBytes, 0600))
+	IfExit(ioutil.WriteFile(path.Join(dir, "config.toml"), []byte(defaultConfig), 0600))
+	fmt.Printf("genesis.json, config.toml and priv_validator.json files saved in %s\n", dir)
 }
 
 func cliGenesis(cmd *cobra.Command, args []string) {
