@@ -145,6 +145,12 @@ func main() {
 			Usage: "specify a height to unbond at",
 		}
 
+		//Formatting Flags
+		verboseFlag = cli.BoolFlag{
+			Name: "verbose",
+			Usage: "Increase verbosity of output",
+		}
+
 		//------------------------------------------------------------
 		// main tx commands
 
@@ -166,6 +172,8 @@ func main() {
 				amtFlag,
 				toFlag,
 				nonceFlag,
+
+				verboseFlag,
 			},
 		}
 
@@ -190,6 +198,8 @@ func main() {
 				dataFileFlag,
 				feeFlag,
 				nonceFlag,
+
+				verboseFlag,
 			},
 		}
 
@@ -214,6 +224,8 @@ func main() {
 				feeFlag,
 				gasFlag,
 				nonceFlag,
+
+				verboseFlag,
 			},
 		}
 
@@ -235,6 +247,8 @@ func main() {
 				amtFlag,
 				unbondtoFlag,
 				nonceFlag,
+
+				verboseFlag,
 			},
 		}
 
@@ -253,6 +267,8 @@ func main() {
 
 				addrFlag,
 				heightFlag,
+
+				verboseFlag,
 			},
 		}
 
@@ -271,6 +287,8 @@ func main() {
 
 				addrFlag,
 				heightFlag,
+
+				verboseFlag,
 			},
 		}
 
