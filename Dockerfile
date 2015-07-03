@@ -20,8 +20,12 @@ ADD . $repo
 WORKDIR $repo
 RUN go install ./...
 
+# set the root tool
+ADD ./mint-client /usr/local/bin/mint-client
+
 # set user
 USER $USER
 ENV TMROOT /home/eris/.eris/
 WORKDIR /home/eris
-CMD ["mintx"]
+
+ENTRYPOINT ["mint-client"]

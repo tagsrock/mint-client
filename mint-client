@@ -1,0 +1,14 @@
+#! /bin/bash
+
+if [ ! $1 ]; then
+	echo "please provide a mint tool to use (info, tx, gen, dump, perms, key)"
+	exit 1
+fi
+
+if [ $1 == "tx" ]; then
+	CMD="mintx"
+else
+	CMD="mint$1"
+fi
+	
+$CMD ${*:2}
