@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/log"
 )
 
 var (
@@ -146,9 +147,9 @@ func main() {
 		}
 
 		//Formatting Flags
-		verboseFlag = cli.BoolFlag{
-			Name:  "verbose",
-			Usage: "Increase verbosity of output",
+		debugFlag = cli.BoolFlag{
+			Name:  "debug",
+			Usage: "print debug messages",
 		}
 
 		//------------------------------------------------------------
@@ -172,8 +173,6 @@ func main() {
 				amtFlag,
 				toFlag,
 				nonceFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -198,8 +197,6 @@ func main() {
 				dataFileFlag,
 				feeFlag,
 				nonceFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -224,8 +221,6 @@ func main() {
 				feeFlag,
 				gasFlag,
 				nonceFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -247,8 +242,6 @@ func main() {
 				amtFlag,
 				unbondtoFlag,
 				nonceFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -267,8 +260,6 @@ func main() {
 
 				addrFlag,
 				heightFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -287,8 +278,6 @@ func main() {
 
 				addrFlag,
 				heightFlag,
-
-				verboseFlag,
 			},
 		}
 
@@ -323,6 +312,11 @@ func main() {
 	app.Version = "0.0.1"
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
+	app.Before = before
+	app.After = after
+	app.Flags = []cli.Flag{
+		debugFlag,
+	}
 	app.Commands = []cli.Command{
 		// inputCmd,
 		// outputCmd,
@@ -336,6 +330,20 @@ func main() {
 	}
 	app.Run(os.Args)
 
+}
+
+func before(c *cli.Context) error {
+	var level int
+	if c.GlobalBool("debug") || c.Bool("debug") {
+		level = 2
+	}
+	log.SetLoggers(level, os.Stdout, os.Stderr)
+	return nil
+}
+
+func after(c *cli.Context) error {
+	log.Flush()
+	return nil
 }
 
 func exit(err error) {

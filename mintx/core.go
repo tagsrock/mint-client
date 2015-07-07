@@ -222,13 +222,18 @@ func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, _ := http.NewRequest("POST", signRPC+"/sign", bytes.NewBuffer(b))
+	logger.Debugln("Sending request body:", string(b))
+	req, err := http.NewRequest("POST", signRPC+"/sign", bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
 	sig, errS, err := requestResponse(req)
 	if err != nil {
 		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
 	}
 	if errS != "" {
-		return nil, fmt.Errorf("Error calling signing daemon: %s", errS)
+		return nil, fmt.Errorf("Error (string) calling signing daemon: %s", errS)
 	}
 	sigBytes, err := hex.DecodeString(sig)
 	return sigBytes, err

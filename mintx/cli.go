@@ -25,15 +25,12 @@ func cliOutput(c *cli.Context) {
 }
 */
 func cliSend(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
 	tx, err := coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS)
 	ifExit(err)
 
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -45,9 +42,7 @@ func cliSend(c *cli.Context) {
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Inputs[0].Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
@@ -57,7 +52,6 @@ func cliSend(c *cli.Context) {
 }
 
 func cliName(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
 
@@ -73,9 +67,7 @@ func cliName(c *cli.Context) {
 	tx, err := coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data)
 	ifExit(err)
 
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -87,9 +79,7 @@ func cliName(c *cli.Context) {
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Input.Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
@@ -99,7 +89,6 @@ func cliName(c *cli.Context) {
 }
 
 func cliCall(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
 
@@ -107,9 +96,7 @@ func cliCall(c *cli.Context) {
 	tx, err := coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
 	ifExit(err)
 
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -121,30 +108,25 @@ func cliCall(c *cli.Context) {
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Input.Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
 		ifExit(err)
 		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-		if (receipt.CreatesContract == 1){
+		if receipt.CreatesContract == 1 {
 			fmt.Printf("Contract Address: %X\n", receipt.ContractAddr)
 		}
 	}
 }
 
 func cliBond(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	pubkey, amtS, nonceS, unbondAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("unbond-to")
 	tx, err := coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS)
 	ifExit(err)
 
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -159,9 +141,7 @@ func cliBond(c *cli.Context) {
 		tx.Inputs[0].Signature = sigED
 		tx.Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
@@ -171,16 +151,13 @@ func cliBond(c *cli.Context) {
 }
 
 func cliUnbond(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	addr, height := c.String("addr"), c.String("height")
 
 	tx, err := coreUnbond(addr, height)
 	ifExit(err)
 
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -192,9 +169,7 @@ func cliUnbond(c *cli.Context) {
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
@@ -204,16 +179,13 @@ func cliUnbond(c *cli.Context) {
 }
 
 func cliRebond(c *cli.Context) {
-	verbose := c.Bool("verbose")
 	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 	addr, height := c.String("addr"), c.String("height")
 
 	tx, err := coreRebond(addr, height)
 	ifExit(err)
-	
-	if (verbose) {
-		fmt.Printf("%v\n", tx)
-	}
+
+	logger.Debugf("%v\n", tx)
 
 	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
 	if sign {
@@ -225,9 +197,7 @@ func cliRebond(c *cli.Context) {
 		sigED := account.SignatureEd25519(sig[:])
 		tx.Signature = sigED
 
-		if (verbose) {
-			fmt.Printf("%X\n", sig)
-		}
+		logger.Debugf("%X\n", sig)
 	}
 	if broadcast {
 		receipt, err := coreBroadcast(tx, nodeAddr)
