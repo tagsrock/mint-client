@@ -20,15 +20,14 @@ import (
 
 var (
 	// Convenience Directories
-	GoPath          = os.Getenv("GOPATH")
-	ErisLtd         = path.Join(GoPath, "src", "github.com", "eris-ltd")
-	usr, _          = user.Current() // error?!
-	ErisRoot        = ResolveErisRoot()
+	GoPath   = os.Getenv("GOPATH")
+	ErisLtd  = path.Join(GoPath, "src", "github.com", "eris-ltd")
+	usr, _   = user.Current() // error?!
+	ErisRoot = ResolveErisRoot()
 
 	// Major Directories
 	ActionsPath        = path.Join(ErisRoot, "actions")
 	BlockchainsPath    = path.Join(ErisRoot, "blockchains")
-	ChainsTypesPath    = path.Join(BlockchainsPath, "types")
 	DataContainersPath = path.Join(ErisRoot, "data")
 	DappsPath          = path.Join(ErisRoot, "dapps")
 	FilesPath          = path.Join(ErisRoot, "files")
@@ -37,6 +36,10 @@ var (
 	ServicesPath       = path.Join(ErisRoot, "services")
 	ScratchPath        = path.Join(ErisRoot, "scratch")
 
+	// Keys
+	KeysDataPath = path.Join(KeysPath, "data")
+	KeyNamesPath = path.Join(KeysPath, "names")
+
 	// Scratch Directories (globally coordinated)
 	EpmScratchPath  = path.Join(ScratchPath, "epm")
 	LllcScratchPath = path.Join(ScratchPath, "lllc")
@@ -44,12 +47,12 @@ var (
 	SerpScratchPath = path.Join(ScratchPath, "ser")
 
 	// Blockchains stuff
-	HEAD            = path.Join(BlockchainsPath, "HEAD")
-	Refs            = path.Join(BlockchainsPath, "refs")
+	HEAD = path.Join(BlockchainsPath, "HEAD")
+	Refs = path.Join(BlockchainsPath, "refs")
 )
 
 var MajorDirs = []string{
-	ErisRoot, ActionsPath, BlockchainsPath, ChainsTypesPath, DataContainersPath, DappsPath, FilesPath, KeysPath, LanguagesPath, ServicesPath, ScratchPath, EpmScratchPath, LllcScratchPath, SolcScratchPath, SerpScratchPath,
+	ErisRoot, ActionsPath, BlockchainsPath, DataContainersPath, DappsPath, FilesPath, KeysPath, LanguagesPath, ServicesPath, KeysDataPath, KeyNamesPath, ScratchPath, EpmScratchPath, LllcScratchPath, SolcScratchPath, SerpScratchPath,
 }
 
 //---------------------------------------------
@@ -158,9 +161,6 @@ func Copy(src, dst string) error {
 		return err
 	}
 	if f.IsDir() {
-		if _, err := os.Stat(dst); err == nil {
-			return fmt.Errorf("destination already exists")
-		}
 		return copyDir(src, dst)
 	}
 	return copyFile(src, dst)
@@ -168,7 +168,7 @@ func Copy(src, dst string) error {
 
 // assumes we've done our checking
 func copyDir(src, dst string) error {
-	fi, _ := os.Stat(src)
+	fi, err := os.Stat(src)
 	if err := os.MkdirAll(dst, fi.Mode()); err != nil {
 		return err
 	}

@@ -55,8 +55,12 @@ func singleUserChain(dir string) {
 	IfExit(*err)
 	valBytes := buf.Bytes()
 	IfExit(ioutil.WriteFile(path.Join(dir, "priv_validator.json"), valBytes, 0600))
-	IfExit(ioutil.WriteFile(path.Join(dir, "config.toml"), []byte(defaultConfig), 0600))
-	fmt.Printf("genesis.json, config.toml and priv_validator.json files saved in %s\n", dir)
+	if _, err := os.Stat(path.Join(dir, "config.toml")); err != nil {
+		IfExit(ioutil.WriteFile(path.Join(dir, "config.toml"), []byte(defaultConfig), 0600))
+		fmt.Printf("genesis.json, config.toml and priv_validator.json files saved in %s\n", dir)
+	} else {
+		fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", dir)
+	}
 }
 
 func cliGenesis(cmd *cobra.Command, args []string) {

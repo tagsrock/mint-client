@@ -26,11 +26,11 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/common",
-			"Rev": "7fe5f9477e38e786ce0a433317fb092ad3888aff"
+			"Rev": "fb9309b1709a2d5a4035271a5d86c3bc7b6f76a5"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto",
-			"Rev": "481a3a73df2eece185b2fe990fd6debcc5d5761a"
+			"Rev": "19777584f3f4a8a2ad4d8c306ceb30e34b223fec"
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",

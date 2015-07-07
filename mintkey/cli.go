@@ -65,13 +65,11 @@ func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
 
 	key := &crypto.Key{
 		Id:         uuid.NewRandom(),
-		Type:       crypto.KeyTypeEd25519,
+		Type:       crypto.KeyType{crypto.CurveTypeEd25519, crypto.AddrTypeRipemd160},
 		Address:    pv.Address,
 		PrivateKey: pv.PrivKey,
 	}
 
-	fmt.Printf("Converted key for address %X\n", key.Address)
-	fmt.Printf("Storing %X in keyStore (%s)\n", key.Address, DefaultKeyStore)
-
+	fmt.Printf("%X\n", key.Address)
 	ifExit(keyStore.StoreKey(key, ""))
 }

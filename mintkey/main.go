@@ -12,7 +12,7 @@ import (
 var (
 	usr, _ = user.Current()
 
-	DefaultKeyStore = common.KeysPath
+	DefaultKeyStore = common.KeysDataPath
 )
 
 func main() {
