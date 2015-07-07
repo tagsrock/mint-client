@@ -21,12 +21,7 @@ WORKDIR $repo
 RUN go install ./...
 
 # grab eris-keys
-ENV keys_repo $GOPATH/src/github.com/eris-ltd/eris-keys
-RUN git clone https://github.com/eris-ltd/eris-keys $keys_repo
-WORKDIR $keys_repo
-RUN git checkout develop
-RUN go install
-WORKDIR $repo
+RUN go get github.com/eris-ltd/eris-keys
 
 ADD ./test.sh /test.sh
 RUN chown $USER:$USER /test.sh
