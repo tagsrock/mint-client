@@ -14,7 +14,7 @@ var (
 
 	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
 	DefaultNodeRPCPort = "46657"
-	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
+	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort + "/"
 
 	DefaultPubKey  string
 	DefaultChainID string
@@ -147,7 +147,7 @@ func main() {
 
 		//Formatting Flags
 		verboseFlag = cli.BoolFlag{
-			Name: "verbose",
+			Name:  "verbose",
 			Usage: "Increase verbosity of output",
 		}
 

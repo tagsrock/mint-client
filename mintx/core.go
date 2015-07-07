@@ -214,9 +214,15 @@ func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
 // sign and broadcast
 
 func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
-	req, _ := http.NewRequest("GET", signRPC+"/sign", nil)
-	req.Header.Add("hash", signBytes)
-	req.Header.Add("addr", signAddr)
+	args := map[string]string{
+		"hash": signBytes,
+		"addr": signAddr,
+	}
+	b, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	req, _ := http.NewRequest("POST", signRPC+"/sign", bytes.NewBuffer(b))
 	sig, errS, err := requestResponse(req)
 	if err != nil {
 		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
