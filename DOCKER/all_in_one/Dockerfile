@@ -1,6 +1,8 @@
 # Pull base image.
 FROM eris/base
 
+ENV DOCKERFILES ./DOCKER/all_in_one
+
 # grab deps (gmp)
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -19,10 +21,10 @@ RUN go get github.com/eris-ltd/eris-keys
 # grab tendermint
 RUN go get github.com/tendermint/tendermint/cmd/tendermint
 ENV TMROOT /home/eris/.eris/blockchains/tendermint
-ADD config.toml $TMROOT/config.toml
+ADD $DOCKERFILES/config.toml $TMROOT/config.toml
 RUN chown -R $USER:$USER $TMROOT
 
-ADD ./test.sh /test.sh
+ADD ./$DOCKERFILES/test.sh /test.sh
 RUN chown $USER:$USER /test.sh
 
 # set user
