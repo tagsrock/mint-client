@@ -122,6 +122,16 @@ func cliRandom(cmd *cobra.Command, args []string) {
 
 	genDoc.ChainID = chainID
 
+	// RandGenesisDoc produces random accounts and validators.
+	// Give the validators accounts:
+	genDoc.Accounts = make([]state.GenesisAccount, N)
+	for i, pv := range validators {
+		genDoc.Accounts[i] = state.GenesisAccount{
+			Address: pv.Address,
+			Amount:  uint64(2) << 50,
+		}
+	}
+
 	buf, buf2, n := new(bytes.Buffer), new(bytes.Buffer), new(int64)
 	binary.WriteJSON(genDoc, buf, n, &err)
 	IfExit(err)
@@ -142,7 +152,11 @@ func cliRandom(cmd *cobra.Command, args []string) {
 		binary.WriteJSON(v, buf, n, &err)
 		IfExit(err)
 		valBytes := buf.Bytes()
-		IfExit(ioutil.WriteFile(path.Join(DirFlag, fmt.Sprintf("priv_validator_%d.json", i)), valBytes, 0600))
+		if len(validators) > 1 {
+			IfExit(ioutil.WriteFile(path.Join(DirFlag, fmt.Sprintf("priv_validator_%d.json", i)), valBytes, 0600))
+		} else {
+			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
+		}
 	}
 	fmt.Printf("genesis.json and priv_validator_X.json files saved in %s\n", DirFlag)
 }

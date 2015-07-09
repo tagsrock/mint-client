@@ -1,10 +1,12 @@
 #! /bin/bash
 
-# A simple test to make sure we can send a transaction through the mintx cli
+# A simple integrations test wherein we startup a one-man blockchain and register a name on it
 
 # setup a new key
 CHAIN_ID=testchain
-mintgen --single --name=$CHAIN_ID $TMROOT
+mintgen random --dir=$TMROOT 1 $CHAIN_ID
+ls $TMROOT
+cat $TMROOT/genesis.json
 ADDR=`mintkey eris $TMROOT/priv_validator.json`
 echo "addr $ADDR"
 export MINTX_PUBKEY=`eris-keys pub --addr $ADDR`

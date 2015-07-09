@@ -17,5 +17,4 @@ dependencies:
 test:
   override:
     - go test ./...
-    - docker build -t client .
-    - docker run -t client
+    - ./DOCKER/linked/build.sh
