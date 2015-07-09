@@ -3,19 +3,21 @@
 #------------------------------------------------------------------
 # create data containers for tendermint and keys
 
+echo "******** CREATING DATA CONTAINERS ************"
 docker run --name tendermint-data eris/data echo "tendermint data container"
 docker run --name keys-data eris/data echo "keys data container"
 
 #------------------------------------------------------------------
 # setup keys
 
+echo "******** RUNNING KEYS DAEMON ************"
 # run eris-keys, generate a key, get pubkey
 docker run --name keys --volumes-from keys-data -d -p 4767:4767 keys
-ADDR=`docker exec -t keys eris-keys gen`
+ADDR=`docker run -t --rm --volumes-from keys-data keys eris-keys gen`
 echo "addr $ADDR"
 # ADDR has an extra character. trim it
 ADDR=${ADDR%?}
-PUBKEY=`docker exec -t keys eris-keys pub --addr $ADDR`
+PUBKEY=`docker run -t --rm --volumes-from keys-data keys eris-keys pub --addr $ADDR`
 PUBKEY=${PUBKEY%?}
 echo "pub $PUBKEY"
 
@@ -45,6 +47,8 @@ cat config.toml | docker run --rm --volumes-from tendermint-data -i tendermint b
 #------------------------------------------------------------------
 # start tendermint
 
+echo "******** RUNNING TENDERMINT ************"
+
 # run the tendermint container with volumes from tendermint-data
 docker run --name tendermint --volumes-from tendermint-data -d -p 46657:46657 tendermint
 
@@ -53,6 +57,8 @@ sleep 3
 
 #------------------------------------------------------------------
 # run test
+
+echo "******** RUNNING TEST ************"
 
 # run the test commands in mint-client container linked to eris-keys and tendermint
 docker run --name client_test --rm --link keys:keys --link tendermint:tendermint -e "CHAIN_ID=$CHAIN_ID" -e "MINTX_PUBKEY=$PUBKEY" -t client
