@@ -84,7 +84,7 @@ func main() {
 	}
 }
 
-func pickAccountNonceAmount(errs *int) (*account.PrivAccount, int, uint, uint64) {
+func pickAccountNonceAmount(errs *int) (*account.PrivAccount, int, int, int64) {
 	// pick sender
 	i := rand.Intn(len(keys))
 	privAcc := keys[i]
@@ -98,9 +98,9 @@ func pickAccountNonceAmount(errs *int) (*account.PrivAccount, int, uint, uint64)
 	nonce := acc.Sequence
 
 	maxAmt := 100
-	amt := uint64(rand.Intn(maxAmt))
+	amt := int64(rand.Intn(maxAmt))
 	for amt == 0 {
-		amt = uint64(rand.Intn(maxAmt))
+		amt = int64(rand.Intn(maxAmt))
 
 	}
 

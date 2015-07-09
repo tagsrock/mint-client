@@ -73,7 +73,7 @@ func cliSingle(cmd *cobra.Command, args []string) {
 		addr = pubKey.Address()
 	}
 
-	amt := uint64(1) << 61
+	amt := int64(1) << 60
 	//  build gendoc
 	genDoc := state.GenesisDoc{
 		ChainID: chainID,
@@ -128,7 +128,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 	for i, pv := range validators {
 		genDoc.Accounts[i] = state.GenesisAccount{
 			Address: pv.Address,
-			Amount:  uint64(2) << 50,
+			Amount:  int64(2) << 50,
 		}
 	}
 

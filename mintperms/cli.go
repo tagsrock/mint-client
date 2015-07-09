@@ -16,7 +16,7 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 		Exit(fmt.Errorf("Please enter at least one `<permission>:<value>` pair like `send:0 call:1 create_account:1`"))
 	}
 
-	bp := types.NewBasePermissions()
+	bp := types.ZeroBasePermissions
 
 	for _, a := range args {
 		spl := strings.Split(a, ":")
@@ -67,7 +67,7 @@ func cliIntsToStrings(cmd *cobra.Command, args []string) {
 }
 
 func cliBBPB(cmd *cobra.Command, args []string) {
-	pf := types.DefaultBBPB
+	pf := types.DefaultBasePermFlags
 	fmt.Println("Perms and SetBit (As Integers)")
 	fmt.Printf("%d\t%d\n", pf, pf)
 	fmt.Println("\nPerms and SetBit (As Bitmasks)")
@@ -81,7 +81,7 @@ func cliBBPB(cmd *cobra.Command, args []string) {
 }
 
 func cliAll(cmd *cobra.Command, args []string) {
-	pf := types.AllSet
+	pf := types.AllPermFlags
 	fmt.Println("Perms and SetBit (As Integers)")
 	fmt.Printf("%d\t%d\n", pf, pf)
 	fmt.Println("\nPerms and SetBit (As Bitmasks)")

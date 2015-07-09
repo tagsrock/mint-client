@@ -3,7 +3,6 @@ package merkle
 import (
 	"bytes"
 	"crypto/sha256"
-
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 )
@@ -35,8 +34,8 @@ func (proof *IAVLProof) Verify(keyBytes, valueBytes, rootHash []byte) bool {
 }
 
 type IAVLProofInnerNode struct {
-	Height uint8
-	Size   uint
+	Height int8
+	Size   int
 	Left   []byte
 	Right  []byte
 }
@@ -45,9 +44,9 @@ func (branch IAVLProofInnerNode) Hash(childHash []byte) []byte {
 	hasher := sha256.New()
 	buf := new(bytes.Buffer)
 	n, err := int64(0), error(nil)
-	binary.WriteUint8(branch.Height, buf, &n, &err)
-	binary.WriteUvarint(branch.Size, buf, &n, &err)
-	if branch.Left == nil {
+	binary.WriteInt8(branch.Height, buf, &n, &err)
+	binary.WriteVarint(branch.Size, buf, &n, &err)
+	if len(branch.Left) == 0 {
 		binary.WriteByteSlice(childHash, buf, &n, &err)
 		binary.WriteByteSlice(branch.Right, buf, &n, &err)
 	} else {
@@ -71,8 +70,8 @@ func (leaf IAVLProofLeafNode) Hash() []byte {
 	hasher := sha256.New()
 	buf := new(bytes.Buffer)
 	n, err := int64(0), error(nil)
-	binary.WriteUint8(0, buf, &n, &err)
-	binary.WriteUvarint(1, buf, &n, &err)
+	binary.WriteInt8(0, buf, &n, &err)
+	binary.WriteVarint(1, buf, &n, &err)
 	binary.WriteByteSlice(leaf.KeyBytes, buf, &n, &err)
 	binary.WriteByteSlice(leaf.ValueBytes, buf, &n, &err)
 	if err != nil {

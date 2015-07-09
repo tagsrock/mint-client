@@ -33,10 +33,11 @@ func coreOutput(addr, amtS string) ([]byte, error) {
 		return nil, fmt.Errorf("addr is bad hex: %v", err)
 	}
 
-	amt, err := strconv.ParseUint(amtS, 10, 64)
+	amt, err := strconv.ParseInt(amtS, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("amt is misformatted: %v", err)
 	}
+	// TODO: validate amt!
 
 	txOutput := types.TxOutput{
 		Address: addrBytes,
@@ -61,7 +62,7 @@ func coreInput(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
 	txInput := types.TxInput{
 		Address:  addrBytes,
 		Amount:   amt,
-		Sequence: uint(nonce),
+		Sequence: int(nonce),
 		PubKey:   pub,
 	}
 
@@ -91,7 +92,7 @@ func coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendT
 
 	tx := types.NewSendTx()
 	_ = addrBytes
-	tx.AddInputWithNonce(pub, amt, uint(nonce))
+	tx.AddInputWithNonce(pub, amt, int(nonce))
 	tx.AddOutput(toAddrBytes, amt)
 
 	return tx, nil
@@ -108,12 +109,12 @@ func coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data str
 		return nil, fmt.Errorf("toAddr is bad hex: %v", err)
 	}
 
-	fee, err := strconv.ParseUint(feeS, 10, 64)
+	fee, err := strconv.ParseInt(feeS, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("fee is misformatted: %v", err)
 	}
 
-	gas, err := strconv.ParseUint(gasS, 10, 64)
+	gas, err := strconv.ParseInt(gasS, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("gas is misformatted: %v", err)
 	}
@@ -123,7 +124,7 @@ func coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data str
 		return nil, fmt.Errorf("data is bad hex: %v", err)
 	}
 
-	tx := types.NewCallTxWithNonce(pub, toAddrBytes, dataBytes, amt, gas, fee, uint(nonce))
+	tx := types.NewCallTxWithNonce(pub, toAddrBytes, dataBytes, amt, gas, fee, int(nonce))
 	return tx, nil
 }
 
@@ -133,12 +134,12 @@ func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*t
 		return nil, err
 	}
 
-	fee, err := strconv.ParseUint(feeS, 10, 64)
+	fee, err := strconv.ParseInt(feeS, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("fee is misformatted: %v", err)
 	}
 
-	tx := types.NewNameTxWithNonce(pub, name, data, amt, fee, uint(nonce))
+	tx := types.NewNameTxWithNonce(pub, name, data, amt, fee, int(nonce))
 	return tx, nil
 }
 
@@ -162,7 +163,7 @@ func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx,
 		return nil, err
 	}
 	_ = addrBytes
-	tx.AddInputWithNonce(pub, amt, uint(nonce))
+	tx.AddInputWithNonce(pub, amt, int(nonce))
 	tx.AddOutput(unbondAddrBytes, amt)
 
 	return tx, nil
@@ -178,14 +179,14 @@ func coreUnbond(addrS, heightS string) (*types.UnbondTx, error) {
 		return nil, fmt.Errorf("addr is bad hex: %v", err)
 	}
 
-	height, err := strconv.ParseUint(heightS, 10, 32)
+	height, err := strconv.ParseInt(heightS, 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("height is misformatted: %v", err)
 	}
 
 	return &types.UnbondTx{
 		Address: addrBytes,
-		Height:  uint(height),
+		Height:  int(height),
 	}, nil
 }
 
@@ -199,14 +200,14 @@ func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
 		return nil, fmt.Errorf("addr is bad hex: %v", err)
 	}
 
-	height, err := strconv.ParseUint(heightS, 10, 32)
+	height, err := strconv.ParseInt(heightS, 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("height is misformatted: %v", err)
 	}
 
 	return &types.RebondTx{
 		Address: addrBytes,
-		Height:  uint(height),
+		Height:  int(height),
 	}, nil
 }
 
@@ -283,7 +284,7 @@ func unpackResponse(resp *http.Response) (string, string, error) {
 //------------------------------------------------------------------------------------
 // convenience function
 
-func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrBytes []byte, amt uint64, nonce uint64, err error) {
+func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKey, addrBytes []byte, amt int64, nonce int64, err error) {
 	if amtS == "" {
 		err = fmt.Errorf("input must specify an amount with the --amt flag")
 		return
@@ -306,7 +307,7 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 		return
 	}
 
-	amt, err = strconv.ParseUint(amtS, 10, 64)
+	amt, err = strconv.ParseInt(amtS, 10, 64)
 	if err != nil {
 		err = fmt.Errorf("amt is misformatted: %v", err)
 	}
@@ -330,9 +331,9 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err.Error())
 			return
 		}
-		nonce = uint64(ac.Sequence) + 1
+		nonce = int64(ac.Sequence) + 1
 	} else {
-		nonce, err = strconv.ParseUint(nonceS, 10, 64)
+		nonce, err = strconv.ParseInt(nonceS, 10, 64)
 		if err != nil {
 			err = fmt.Errorf("nonce is misformatted: %v", err)
 			return
