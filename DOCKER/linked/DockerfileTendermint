@@ -6,7 +6,7 @@ ENV DOCKERFILES ./DOCKER/linked
 # grab deps (gmp)
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-    libgmp3-dev jq && \
+    libgmp3-dev && \
   rm -rf /var/lib/apt/lists/*
 
 # grab tendermint
