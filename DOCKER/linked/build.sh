@@ -1,13 +1,15 @@
 #! /bin/sh
 set -e
 
+# mct = mint client test
+
 cd $GOPATH/src/github.com/eris-ltd/mint-client
 echo "********** BUILDING TENDERMINT ********"
-docker build -t tendermint -f ./DOCKER/linked/DockerfileTendermint . 
+docker build -t mct_tendermint -f ./DOCKER/linked/DockerfileTendermint . 
 echo "********** BUILDING ERIS-KEYS ********"
-docker build -t keys -f ./DOCKER/linked/DockerfileKeys . 
+docker build -t mct_keys -f ./DOCKER/linked/DockerfileKeys . 
 echo "********** BUILDING MINT-CLIENT ********"
-docker build -t client -f ./DOCKER/linked/DockerfileClient . 
+docker build -t mct_client -f ./DOCKER/linked/DockerfileClient . 
 
 cd ./DOCKER/linked
 ./run.sh
