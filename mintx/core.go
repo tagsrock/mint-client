@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
@@ -91,7 +92,7 @@ func coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendT
 	}
 
 	tx := types.NewSendTx()
-	_ = addrBytes
+	_ = addrBytes // TODO!
 	tx.AddInputWithNonce(pub, amt, int(nonce))
 	tx.AddOutput(toAddrBytes, amt)
 
@@ -141,6 +142,102 @@ func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*t
 
 	tx := types.NewNameTxWithNonce(pub, name, data, amt, fee, int(nonce))
 	return tx, nil
+}
+
+func corePermissions(nodeAddr, pubkey, addrS, nonceS, permFunc string, argsS []string) (*types.PermissionsTx, error) {
+	pub, _, _, nonce, err := checkCommon(nodeAddr, pubkey, addrS, "0", "0")
+	if err != nil {
+		return nil, err
+	}
+	var args ptypes.PermArgs
+	switch permFunc {
+	case "set_base":
+		addr, pF, err := decodeAddressPermFlag(argsS[0], argsS[1])
+		if err != nil {
+			return nil, err
+		}
+		if len(argsS) != 3 {
+			return nil, fmt.Errorf("set_base also takes a value (true or false)")
+		}
+		var value bool
+		if argsS[2] == "true" {
+			value = true
+		} else if argsS[2] == "false" {
+			value = false
+		} else {
+			return nil, fmt.Errorf("Unknown value %s", argsS[2])
+		}
+		args = &ptypes.SetBaseArgs{addr, pF, value}
+	case "unset_base":
+		addr, pF, err := decodeAddressPermFlag(argsS[0], argsS[1])
+		if err != nil {
+			return nil, err
+		}
+		args = &ptypes.UnsetBaseArgs{addr, pF}
+	case "set_global":
+		pF, err := ptypes.PermStringToFlag(argsS[0])
+		if err != nil {
+			return nil, err
+		}
+		var value bool
+		if argsS[1] == "true" {
+			value = true
+		} else if argsS[1] == "false" {
+			value = false
+		} else {
+			return nil, fmt.Errorf("Unknown value %s", argsS[1])
+		}
+		args = &ptypes.SetGlobalArgs{pF, value}
+	case "add_role":
+		addr, err := hex.DecodeString(argsS[0])
+		if err != nil {
+			return nil, err
+		}
+		args = &ptypes.AddRoleArgs{addr, argsS[1]}
+	case "rm_role":
+		addr, err := hex.DecodeString(argsS[0])
+		if err != nil {
+			return nil, err
+		}
+		args = &ptypes.RmRoleArgs{addr, argsS[1]}
+	default:
+		return nil, fmt.Errorf("Invalid permission function for use in PermissionsTx: %s", permFunc)
+	}
+	// args := snativeArgs(
+	tx := types.NewPermissionsTxWithNonce(pub, args, int(nonce))
+	return tx, nil
+}
+
+func decodeAddressPermFlag(addrS, permFlagS string) (addr []byte, pFlag ptypes.PermFlag, err error) {
+	if addr, err = hex.DecodeString(addrS); err != nil {
+		return
+	}
+	if pFlag, err = ptypes.PermStringToFlag(permFlagS); err != nil {
+		return
+	}
+	return
+}
+
+type NameGetter struct {
+	client cclient.Client
+}
+
+func (n NameGetter) GetNameRegEntry(name string) *types.NameRegEntry {
+	entry, err := n.client.GetName(name)
+	if err != nil {
+		panic(err)
+	}
+	return entry
+}
+
+func coreNewAccount(nodeAddr, pubkey, chainID string) (*types.NewAccountTx, error) {
+	pub, _, _, _, err := checkCommon(nodeAddr, pubkey, "", "0", "0")
+	if err != nil {
+		return nil, err
+	}
+
+	client := cclient.NewClient(nodeAddr, "HTTP")
+	return types.NewNewAccountTx(NameGetter{client}, pub, chainID)
 }
 
 func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, error) {
@@ -214,30 +311,34 @@ func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
 //------------------------------------------------------------------------------------
 // sign and broadcast
 
-func coreSign(signBytes, signAddr, signRPC string) ([]byte, error) {
+func coreSign(signBytes, signAddr, signRPC string) (sig [64]byte, err error) {
 	args := map[string]string{
 		"hash": signBytes,
 		"addr": signAddr,
 	}
 	b, err := json.Marshal(args)
 	if err != nil {
-		return nil, err
+		return
 	}
 	logger.Debugln("Sending request body:", string(b))
 	req, err := http.NewRequest("POST", signRPC+"/sign", bytes.NewBuffer(b))
 	if err != nil {
-		return nil, err
+		return
 	}
 	req.Header.Add("Content-Type", "application/json")
-	sig, errS, err := requestResponse(req)
+	sigS, errS, err := requestResponse(req)
 	if err != nil {
-		return nil, fmt.Errorf("Error calling signing daemon: %s", err.Error())
+		return sig, fmt.Errorf("Error calling signing daemon: %s", err.Error())
 	}
 	if errS != "" {
-		return nil, fmt.Errorf("Error (string) calling signing daemon: %s", errS)
+		return sig, fmt.Errorf("Error (string) calling signing daemon: %s", errS)
 	}
-	sigBytes, err := hex.DecodeString(sig)
-	return sigBytes, err
+	sigBytes, err := hex.DecodeString(sigS)
+	if err != nil {
+		return
+	}
+	copy(sig[:], sigBytes)
+	return
 }
 
 func coreBroadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
@@ -313,7 +414,9 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 	}
 
 	if len(pubKeyBytes) > 0 {
-		pub = account.PubKeyEd25519(pubKeyBytes)
+		var pubArray [32]byte
+		copy(pubArray[:], pubKeyBytes)
+		pub = account.PubKeyEd25519(pubArray)
 		addrBytes = pub.Address()
 	}
 

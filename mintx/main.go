@@ -281,6 +281,40 @@ func main() {
 			},
 		}
 
+		permissionsCmd = cli.Command{
+			Name:   "perm",
+			Usage:  "mintx perm <function name> <args ...>",
+			Action: cliPermissions,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
+
+				signFlag,
+				broadcastFlag,
+				nonceFlag,
+			},
+		}
+
+		newAccountCmd = cli.Command{
+			Name:   "new",
+			Usage:  "mintx new",
+			Action: cliNewAccount,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+				pubkeyFlag,
+
+				signFlag,
+				broadcastFlag,
+			},
+		}
+
 		/*
 			inputCmd = cli.Command{
 				Name:   "input",
@@ -327,6 +361,8 @@ func main() {
 		unbondCmd,
 		rebondCmd,
 		// dupeoutCmd,
+		permissionsCmd,
+		newAccountCmd,
 	}
 	app.Run(os.Args)
 
