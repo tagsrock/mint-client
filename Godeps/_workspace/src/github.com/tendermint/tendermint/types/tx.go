@@ -348,6 +348,11 @@ func (tx *PermissionsTx) String() string {
 
 //-----------------------------------------------------------------------------
 
+type NewAccountTxInfo struct {
+	PoWTarget []byte `json:"pow_target"`
+	Balance   int64  `json:"balance"`
+}
+
 type NewAccountTx struct {
 	Input *TxInput `json:"input"`
 	Nonce []byte   `json:"nonce"`

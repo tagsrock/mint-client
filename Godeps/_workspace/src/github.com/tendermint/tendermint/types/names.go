@@ -6,11 +6,11 @@ import (
 
 // reserved name reg entries
 const (
-	NameNewAccountTxDifficulty string = "NewAccountTxDifficulty"
+	NewAccountTxInfoName string = "NewAccountTxInfo"
 )
 
 var (
-	ReservedNames = []string{NameNewAccountTxDifficulty}
+	ReservedNames = []string{NewAccountTxInfoName}
 )
 
 var (

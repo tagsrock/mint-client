@@ -2,7 +2,6 @@ package types
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
@@ -273,14 +272,17 @@ func (tx *PermissionsTx) Sign(chainID string, privAccount *acm.PrivAccount) {
 
 // NewAccountTx needs the chainID for the proof of work
 func NewNewAccountTx(st NameGetter, from acm.PubKey, chainID string) (*NewAccountTx, error) {
-	entry := st.GetNameRegEntry(NameNewAccountTxDifficulty)
+	entry := st.GetNameRegEntry(NewAccountTxInfoName)
 	if entry == nil {
 		return nil, fmt.Errorf("Chain does not support new accounts")
 	}
-	target, err := hex.DecodeString(entry.Data)
-	if err != nil {
-		return nil, fmt.Errorf("NameRegEntry at %s must be valid hex. Tell your chain operator to clean up their act", NameNewAccountTxDifficulty)
+	var newAccountInfo NewAccountTxInfo
+	err := new(error)
+	binary.ReadJSON(&newAccountInfo, []byte(entry.Data), err)
+	if *err != nil {
+		return nil, fmt.Errorf("NameRegEntry at %s must be json encoded NewAccountTxInfo. Tell your chain operator to clean up their act", NewAccountTxInfoName)
 	}
+	target := newAccountInfo.PoWTarget
 
 	var tx *NewAccountTx
 	nonce64 := RandInt64()

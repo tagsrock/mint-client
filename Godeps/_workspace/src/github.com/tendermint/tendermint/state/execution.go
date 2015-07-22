@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -897,17 +898,19 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 	case *types.NewAccountTx:
 		var inAcc *acm.Account
 
-		// First things first we grab the required difficulty
-		entry := _s.GetNameRegEntry(types.NameNewAccountTxDifficulty)
+		// First thing's first, grab the required difficulty
+		// and check the proof of work
+		entry := _s.GetNameRegEntry(types.NewAccountTxInfoName)
 		if entry == nil {
 			log.Info(types.ErrTxFeatureNotEnabled.Error(), "feature", "NewAccountTx")
 			return types.ErrTxFeatureNotEnabled
 		}
-		target, err := hex.DecodeString(entry.Data)
-		if err != nil {
-			PanicSanity(Fmt("NameRegEntry at %s must be valid hex. What is this?!", types.NameNewAccountTxDifficulty))
+		var newAccountInfo types.NewAccountTxInfo
+		if err := json.Unmarshal([]byte(entry.Data), &newAccountInfo); err != nil {
+			log.Info("Error unmarshalling entry data into NewAccountTxInfo", "error", err, "entry", entry.Data)
+			return types.ErrTxFeatureNotEnabled
 		}
-		// and check the proof of work
+		target := newAccountInfo.PoWTarget
 		signBytes := acm.SignBytes(_s.ChainID, tx)
 		h := binary.BinaryRipemd160(signBytes)
 		if bytes.Compare(h, target) > 0 {
@@ -965,6 +968,7 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 
 		// Good!
 		inAcc.Sequence += 1
+		inAcc.Balance = newAccountInfo.Balance
 		blockCache.UpdateAccount(inAcc)
 
 		if evc != nil {

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	tdb "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 var chain_id = "lone_ranger"
@@ -17,9 +19,17 @@ var perms, setbit = 66, 70
 var accName = "me"
 var roles1 = []string{"master", "universal-ruler"}
 var amt1 int64 = 1000000
+var newAccBalance = int64(1000)
+var newAccTarget = "0000ffffffffffffffffffffffffffffffffffff"
 var g1 = fmt.Sprintf(`
 {
     "chain_id":"%s",
+    "params":{
+	"new_account_info":{
+		"pow_target": "%s",
+		"balance":%d
+	}
+    },
     "accounts": [
         {
             "address": "%X",
@@ -50,12 +60,19 @@ var g1 = fmt.Sprintf(`
         }
     ]
 }
-`, chain_id, addr1, amt1, accName, perms, setbit, roles1[0], roles1[1])
+`, chain_id, newAccTarget, newAccBalance, addr1, amt1, accName, perms, setbit, roles1[0], roles1[1])
 
 func TestGenesisReadable(t *testing.T) {
 	genDoc := GenesisDocFromJSON([]byte(g1))
 	if genDoc.ChainID != chain_id {
 		t.Fatalf("Incorrect chain id. Got %d, expected %d\n", genDoc.ChainID, chain_id)
+	}
+	targetB, _ := hex.DecodeString(newAccTarget)
+	if !bytes.Equal(genDoc.Params.NewAccountTxInfo.PoWTarget, targetB) {
+		t.Fatalf("Incorrect new account pow target. Got %X, expected %X", genDoc.Params.NewAccountTxInfo.PoWTarget, targetB)
+	}
+	if genDoc.Params.NewAccountTxInfo.Balance != newAccBalance {
+		t.Fatalf("Incorrect new account balance. Got %d, expected %d", genDoc.Params.NewAccountTxInfo.Balance, newAccBalance)
 	}
 	acc := genDoc.Accounts[0]
 	if bytes.Compare(acc.Address, addr1) != 0 {
@@ -82,5 +99,16 @@ func TestGenesisMakeState(t *testing.T) {
 	v, _ := acc.Permissions.Base.Get(ptypes.Send)
 	if v != (send1 > 0) {
 		t.Fatalf("Incorrect permission for send. Got %v, expected %v\n", v, send1 > 0)
+	}
+
+	entry := st.GetNameRegEntry(types.NewAccountTxInfoName)
+	var newAccountInfo types.NewAccountTxInfo
+	err := new(error)
+	binary.ReadJSON(&newAccountInfo, []byte(entry.Data), err)
+	if *err != nil {
+		t.Fatal(err)
+	}
+	if hex.EncodeToString(newAccountInfo.PoWTarget) != newAccTarget {
+		t.Fatalf("Incorrect new account pow target stored in name reg. Got %X, expected %s", newAccountInfo.PoWTarget, newAccTarget)
 	}
 }

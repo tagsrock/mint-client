@@ -232,8 +232,12 @@ func TestNewAccountTxs(t *testing.T) {
 	}
 	difficulty[0] = 0
 	difficulty[1] = 0
-	difficultyHex := hex.EncodeToString(difficulty)
-	state.UpdateNameRegEntry(&types.NameRegEntry{Expires: int(1) << 62, Name: types.NameNewAccountTxDifficulty, Data: difficultyHex})
+	balance := int64(1000)
+	newAccountInfo := types.NewAccountTxInfo{difficulty, balance}
+	n, errr := new(int64), new(error)
+	w := new(bytes.Buffer)
+	binary.WriteJSON(newAccountInfo, w, n, errr)
+	state.UpdateNameRegEntry(&types.NameRegEntry{Expires: int(1) << 62, Name: types.NewAccountTxInfoName, Data: string(w.Bytes())})
 
 	tx, err := types.NewNewAccountTx(state, privAccount.PubKey, state.ChainID)
 	if err != nil {
@@ -245,7 +249,13 @@ func TestNewAccountTxs(t *testing.T) {
 	if err := execTxWithState(state, tx, true); err != nil {
 		t.Fatalf("Unexpected error on new account for %X: %v", privAccount.PubKey.Address(), err)
 	}
-
+	acc := state.GetAccount(privAccount.PubKey.Address())
+	if acc == nil {
+		t.Fatal("Expected account to exist after NewAccountTx")
+	}
+	if acc.Balance != balance {
+		t.Fatalf("Wrong balance on new account. Got %d, expected %d", acc.Balance, balance)
+	}
 }
 
 func TestNameTxs(t *testing.T) {
