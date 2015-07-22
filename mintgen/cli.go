@@ -146,6 +146,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 		IfExit(os.MkdirAll(DirFlag, 0700))
 	}
 	// XXX: we're gonna write to it even if it already exists
+	IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(defaultConfig), 0644))
 	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 	for i, v := range validators {
 		buf, n = new(bytes.Buffer), new(int64)
@@ -158,5 +159,5 @@ func cliRandom(cmd *cobra.Command, args []string) {
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
 		}
 	}
-	fmt.Printf("genesis.json and priv_validator_X.json files saved in %s\n", DirFlag)
+	fmt.Printf("config.toml, genesis.json and priv_validator_X.json files saved in %s\n", DirFlag)
 }
