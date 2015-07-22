@@ -5,9 +5,10 @@ import (
 	"errors"
 	"io"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
 
 var (
@@ -20,7 +21,9 @@ var (
 	ErrTxInvalidPubKey        = errors.New("Error invalid pubkey")
 	ErrTxInvalidSignature     = errors.New("Error invalid signature")
 	ErrTxInvalidString        = errors.New("Error invalid string")
-	ErrIncorrectOwner         = errors.New("Error incorrect owner")
+	ErrTxIncorrectOwner       = errors.New("Error incorrect owner")
+	ErrTxInvalidDifficulty    = errors.New("Error invalid difficulty")
+	ErrTxFeatureNotEnabled    = errors.New("Error feature not enabled")
 )
 
 type ErrTxInvalidSequence struct {
@@ -44,7 +47,12 @@ Validation Txs:
  - BondTx         New validator posts a bond
  - UnbondTx       Validator leaves
  - DupeoutTx      Validator dupes out (equivocates)
+
+Admin Txs:
+ - PermissionsTx
+ - NewAccountTx
 */
+
 type Tx interface {
 	WriteSignBytes(chainID string, w io.Writer, n *int64, err *error)
 }
@@ -61,6 +69,10 @@ const (
 	TxTypeUnbond  = byte(0x12)
 	TxTypeRebond  = byte(0x13)
 	TxTypeDupeout = byte(0x14)
+
+	// Admin transactions
+	TxTypePermissions = byte(0x20)
+	TxTypeNewAccount  = byte(0x21)
 )
 
 // for binary.readReflect
@@ -73,16 +85,18 @@ var _ = binary.RegisterInterface(
 	binary.ConcreteType{&UnbondTx{}, TxTypeUnbond},
 	binary.ConcreteType{&RebondTx{}, TxTypeRebond},
 	binary.ConcreteType{&DupeoutTx{}, TxTypeDupeout},
+	binary.ConcreteType{&PermissionsTx{}, TxTypePermissions},
+	binary.ConcreteType{&NewAccountTx{}, TxTypeNewAccount},
 )
 
 //-----------------------------------------------------------------------------
 
 type TxInput struct {
-	Address   []byte            `json:"address"`   // Hash of the PubKey
-	Amount    int64             `json:"amount"`    // Must not exceed account balance
-	Sequence  int               `json:"sequence"`  // Must be 1 greater than the last committed TxInput
-	Signature account.Signature `json:"signature"` // Depends on the PubKey type and the whole Tx
-	PubKey    account.PubKey    `json:"pub_key"`   // Must not be nil, may be nil
+	Address   []byte        `json:"address"`   // Hash of the PubKey
+	Amount    int64         `json:"amount"`    // Must not exceed account balance
+	Sequence  int           `json:"sequence"`  // Must be 1 greater than the last committed TxInput
+	Signature acm.Signature `json:"signature"` // Depends on the PubKey type and the whole Tx
+	PubKey    acm.PubKey    `json:"pub_key"`   // Must not be nil, may be nil
 }
 
 func (txIn *TxInput) ValidateBasic() error {
@@ -231,10 +245,10 @@ func (tx *NameTx) String() string {
 //-----------------------------------------------------------------------------
 
 type BondTx struct {
-	PubKey    account.PubKeyEd25519    `json:"pub_key"`
-	Signature account.SignatureEd25519 `json:"signature"`
-	Inputs    []*TxInput               `json:"inputs"`
-	UnbondTo  []*TxOutput              `json:"unbond_to"`
+	PubKey    acm.PubKeyEd25519    `json:"pub_key"`
+	Signature acm.SignatureEd25519 `json:"signature"`
+	Inputs    []*TxInput           `json:"inputs"`
+	UnbondTo  []*TxOutput          `json:"unbond_to"`
 }
 
 func (tx *BondTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
@@ -265,9 +279,9 @@ func (tx *BondTx) String() string {
 //-----------------------------------------------------------------------------
 
 type UnbondTx struct {
-	Address   []byte                   `json:"address"`
-	Height    int                      `json:"height"`
-	Signature account.SignatureEd25519 `json:"signature"`
+	Address   []byte               `json:"address"`
+	Height    int                  `json:"height"`
+	Signature acm.SignatureEd25519 `json:"signature"`
 }
 
 func (tx *UnbondTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
@@ -282,9 +296,9 @@ func (tx *UnbondTx) String() string {
 //-----------------------------------------------------------------------------
 
 type RebondTx struct {
-	Address   []byte                   `json:"address"`
-	Height    int                      `json:"height"`
-	Signature account.SignatureEd25519 `json:"signature"`
+	Address   []byte               `json:"address"`
+	Height    int                  `json:"height"`
+	Signature acm.SignatureEd25519 `json:"signature"`
 }
 
 func (tx *RebondTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
@@ -305,7 +319,7 @@ type DupeoutTx struct {
 }
 
 func (tx *DupeoutTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
-	panic("DupeoutTx has no sign bytes")
+	PanicSanity("DupeoutTx has no sign bytes")
 }
 
 func (tx *DupeoutTx) String() string {
@@ -314,8 +328,48 @@ func (tx *DupeoutTx) String() string {
 
 //-----------------------------------------------------------------------------
 
-func TxId(chainID string, tx Tx) []byte {
-	signBytes := account.SignBytes(chainID, tx)
+type PermissionsTx struct {
+	Input    *TxInput        `json:"input"`
+	PermArgs ptypes.PermArgs `json:"args"`
+}
+
+func (tx *PermissionsTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
+	binary.WriteTo([]byte(Fmt(`{"chain_id":%s`, jsonEscape(chainID))), w, n, err)
+	binary.WriteTo([]byte(Fmt(`,"tx":[%v,{"args":"`, TxTypePermissions)), w, n, err)
+	binary.WriteJSON(tx.PermArgs, w, n, err)
+	binary.WriteTo([]byte(`","input":`), w, n, err)
+	tx.Input.WriteSignBytes(w, n, err)
+	binary.WriteTo([]byte(`}]}`), w, n, err)
+}
+
+func (tx *PermissionsTx) String() string {
+	return Fmt("PermissionsTx{%v -> %v}", tx.Input, tx.PermArgs)
+}
+
+//-----------------------------------------------------------------------------
+
+type NewAccountTx struct {
+	Input *TxInput `json:"input"`
+	Nonce []byte   `json:"nonce"`
+}
+
+func (tx *NewAccountTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
+	binary.WriteTo([]byte(Fmt(`{"chain_id":%s`, jsonEscape(chainID))), w, n, err)
+	binary.WriteTo([]byte(Fmt(`,"tx":[%v,{"input":`, TxTypeNewAccount)), w, n, err)
+	tx.Input.WriteSignBytes(w, n, err)
+	binary.WriteTo([]byte(Fmt(`,"nonce":%s`, jsonEscape(Fmt("%X", tx.Nonce)))), w, n, err)
+	binary.WriteTo([]byte(`}]}`), w, n, err)
+}
+
+func (tx *NewAccountTx) String() string {
+	return Fmt("NewAccount{%v}", tx.Input)
+}
+
+//-----------------------------------------------------------------------------
+
+// This should match the leaf hashes of Block.Data.Hash()'s SimpleMerkleTree.
+func TxID(chainID string, tx Tx) []byte {
+	signBytes := acm.SignBytes(chainID, tx)
 	return binary.BinaryRipemd160(signBytes)
 }
 
@@ -325,7 +379,7 @@ func TxId(chainID string, tx Tx) []byte {
 func jsonEscape(str string) string {
 	escapedBytes, err := json.Marshal(str)
 	if err != nil {
-		panic(Fmt("Error json-escaping a string", str))
+		PanicSanity(Fmt("Error json-escaping a string", str))
 	}
 	return string(escapedBytes)
 }

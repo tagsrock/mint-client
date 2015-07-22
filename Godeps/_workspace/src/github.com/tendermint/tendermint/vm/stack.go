@@ -5,9 +5,8 @@ import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 )
 
-// Not goroutine safe
 type Stack struct {
-	data []Word256
+	data []Word256 // Not goroutine safe
 	ptr  int
 
 	gas *int64
@@ -50,7 +49,7 @@ func (st *Stack) Push(d Word256) {
 // currently only called after Sha3
 func (st *Stack) PushBytes(bz []byte) {
 	if len(bz) != 32 {
-		panic("Invalid bytes size: expected 32")
+		PanicSanity("Invalid bytes size: expected 32")
 	}
 	st.Push(LeftPadWord256(bz))
 }

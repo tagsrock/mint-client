@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
@@ -21,8 +22,7 @@ func SignBytes(chainID string, o Signable) []byte {
 	buf, n, err := new(bytes.Buffer), new(int64), new(error)
 	o.WriteSignBytes(chainID, buf, n, err)
 	if *err != nil {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic(err)
+		PanicCrisis(err)
 	}
 	return buf.Bytes()
 }
@@ -54,8 +54,10 @@ func (acc *Account) Copy() *Account {
 }
 
 func (acc *Account) String() string {
-	// return fmt.Sprintf("Account{%X:%v C:%v S:%X}", acc.Address, acc.PubKey, len(acc.Code), acc.StorageRoot)
-	return fmt.Sprintf("Account{%X:%v C:%v S:%X P:%s}", acc.Address, acc.PubKey, len(acc.Code), acc.StorageRoot, acc.Permissions)
+	if acc == nil {
+		return "nil-Account"
+	}
+	return fmt.Sprintf("Account{%X:%v B:%v C:%v S:%X P:%s}", acc.Address, acc.PubKey, acc.Balance, len(acc.Code), acc.StorageRoot, acc.Permissions)
 }
 
 func AccountEncoder(o interface{}, w io.Writer, n *int64, err *error) {

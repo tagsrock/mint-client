@@ -2,13 +2,12 @@ package types
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
@@ -24,19 +23,19 @@ type Block struct {
 func (b *Block) ValidateBasic(chainID string, lastBlockHeight int, lastBlockHash []byte,
 	lastBlockParts PartSetHeader, lastBlockTime time.Time) error {
 	if b.ChainID != chainID {
-		return errors.New("Wrong Block.Header.ChainID")
+		return errors.New(Fmt("Wrong Block.Header.ChainID. Expected %v, got %v", chainID, b.ChainID))
 	}
 	if b.Height != lastBlockHeight+1 {
-		return errors.New("Wrong Block.Header.Height")
+		return errors.New(Fmt("Wrong Block.Header.Height. Expected %v, got %v", lastBlockHeight+1, b.Height))
 	}
 	if b.NumTxs != len(b.Data.Txs) {
-		return errors.New("Wrong Block.Header.NumTxs")
+		return errors.New(Fmt("Wrong Block.Header.NumTxs. Expected %v, got %v", len(b.Data.Txs), b.NumTxs))
 	}
 	if !bytes.Equal(b.LastBlockHash, lastBlockHash) {
-		return errors.New("Wrong Block.Header.LastBlockHash")
+		return errors.New(Fmt("Wrong Block.Header.LastBlockHash.  Expected %X, got %X", lastBlockHash, b.LastBlockHash))
 	}
 	if !b.LastBlockParts.Equals(lastBlockParts) {
-		return errors.New("Wrong Block.Header.LastBlockParts")
+		return errors.New(Fmt("Wrong Block.Header.LastBlockParts. Expected %v, got %v", lastBlockParts, b.LastBlockParts))
 	}
 	/*	TODO: Determine bounds
 		See blockchain/reactor "stopSyncingDurationMinutes"
@@ -138,15 +137,7 @@ func (h *Header) Hash() []byte {
 		return nil
 	}
 
-	buf := new(bytes.Buffer)
-	hasher, n, err := sha256.New(), new(int64), new(error)
-	binary.WriteBinary(h, buf, n, err)
-	if *err != nil {
-		panic(err)
-	}
-	hasher.Write(buf.Bytes())
-	hash := hasher.Sum(nil)
-	return hash
+	return binary.BinaryRipemd160(h)
 }
 
 func (h *Header) StringIndented(indent string) string {
@@ -319,9 +310,9 @@ func (data *Data) Hash() []byte {
 	if data.hash == nil {
 		bs := make([]interface{}, len(data.Txs))
 		for i, tx := range data.Txs {
-			bs[i] = account.SignBytes(config.GetString("chain_id"), tx)
+			bs[i] = acm.SignBytes(config.GetString("chain_id"), tx)
 		}
-		data.hash = merkle.SimpleHashFromBinaries(bs)
+		data.hash = merkle.SimpleHashFromBinaries(bs) // NOTE: leaves are TxIDs.
 	}
 	return data.hash
 }

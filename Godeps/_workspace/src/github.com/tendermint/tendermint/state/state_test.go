@@ -1,13 +1,15 @@
 package state
 
 import (
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	_ "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint_test"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-
 	"bytes"
+	"encoding/hex"
 	"testing"
 	"time"
+
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	_ "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint_test"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 func execTxWithState(state *State, tx types.Tx, runCall bool) error {
@@ -210,6 +212,40 @@ func TestTxSequence(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestNewAccountTxs(t *testing.T) {
+	state, _, _ := RandGenesisState(3, true, 1000, 1, true, 1000)
+
+	privAccount := acm.GenPrivAccount()
+	tx := types.NewNewAccountTxWithNonce(privAccount.PubKey, []byte{0})
+	log.Debug("NewAccountTx", "nonce", hex.EncodeToString(tx.Nonce), "hash", hex.EncodeToString(binary.BinaryRipemd160(tx)))
+	tx.Sign(state.ChainID, privAccount)
+
+	if err := execTxWithState(state, tx, true); err != types.ErrTxFeatureNotEnabled {
+		t.Fatalf("Expected ErrFeatureNotEnabled on new account for %X: %v", privAccount.PubKey.Address(), err)
+	}
+
+	difficulty := make([]byte, 20)
+	for i := 0; i < 20; i++ {
+		difficulty[i] = 255
+	}
+	difficulty[0] = 0
+	difficulty[1] = 0
+	difficultyHex := hex.EncodeToString(difficulty)
+	state.UpdateNameRegEntry(&types.NameRegEntry{Expires: int(1) << 62, Name: types.NameNewAccountTxDifficulty, Data: difficultyHex})
+
+	tx, err := types.NewNewAccountTx(state, privAccount.PubKey, state.ChainID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	log.Debug("NewAccountTx", "nonce", hex.EncodeToString(tx.Nonce), "hash", hex.EncodeToString(binary.BinaryRipemd160(tx)))
+	tx.Sign(state.ChainID, privAccount)
+
+	if err := execTxWithState(state, tx, true); err != nil {
+		t.Fatalf("Unexpected error on new account for %X: %v", privAccount.PubKey.Address(), err)
+	}
+
 }
 
 func TestNameTxs(t *testing.T) {
@@ -520,7 +556,7 @@ proof-of-work chain as proof of what happened while they were gone `
 	{
 		state := state.Copy()
 		tx := &types.BondTx{
-			PubKey: acc0PubKey.(account.PubKeyEd25519),
+			PubKey: acc0PubKey.(acm.PubKeyEd25519),
 			Inputs: []*types.TxInput{
 				&types.TxInput{
 					Address:  acc0.Address,
@@ -536,7 +572,7 @@ proof-of-work chain as proof of what happened while they were gone `
 				},
 			},
 		}
-		tx.Signature = privAccounts[0].Sign(state.ChainID, tx).(account.SignatureEd25519)
+		tx.Signature = privAccounts[0].Sign(state.ChainID, tx).(acm.SignatureEd25519)
 		tx.Inputs[0].Signature = privAccounts[0].Sign(state.ChainID, tx)
 		err := execTxWithState(state, tx, true)
 		if err != nil {
@@ -577,7 +613,7 @@ func TestAddValidator(t *testing.T) {
 	// The first privAccount will become a validator
 	acc0 := privAccounts[0]
 	bondTx := &types.BondTx{
-		PubKey: acc0.PubKey.(account.PubKeyEd25519),
+		PubKey: acc0.PubKey.(acm.PubKeyEd25519),
 		Inputs: []*types.TxInput{
 			&types.TxInput{
 				Address:  acc0.Address,
@@ -593,7 +629,7 @@ func TestAddValidator(t *testing.T) {
 			},
 		},
 	}
-	bondTx.Signature = acc0.Sign(s0.ChainID, bondTx).(account.SignatureEd25519)
+	bondTx.Signature = acc0.Sign(s0.ChainID, bondTx).(acm.SignatureEd25519)
 	bondTx.Inputs[0].Signature = acc0.Sign(s0.ChainID, bondTx)
 
 	// Make complete block and blockParts

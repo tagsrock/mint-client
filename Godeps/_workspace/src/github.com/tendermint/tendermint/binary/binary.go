@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"reflect"
+
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 )
 
 // TODO document and maybe make it configurable.
@@ -16,8 +18,16 @@ var ErrBinaryReadSizeUnderflow = errors.New("Error: binary read size underflow")
 func ReadBinary(o interface{}, r io.Reader, n *int64, err *error) interface{} {
 	rv, rt := reflect.ValueOf(o), reflect.TypeOf(o)
 	if rv.Kind() == reflect.Ptr {
-		readReflectBinary(rv, rt, Options{}, r, n, err)
-		return o
+		if rv.IsNil() {
+			// This allows ReadBinaryObject() to return a nil pointer,
+			// if the value read is nil.
+			rvPtr := reflect.New(rt)
+			ReadBinaryPtr(rvPtr.Interface(), r, n, err)
+			return rvPtr.Elem().Interface()
+		} else {
+			readReflectBinary(rv, rt, Options{}, r, n, err)
+			return o
+		}
 	} else {
 		ptrRv := reflect.New(rt)
 		readReflectBinary(ptrRv.Elem(), rt, Options{}, r, n, err)
@@ -29,10 +39,10 @@ func ReadBinaryPtr(o interface{}, r io.Reader, n *int64, err *error) interface{}
 	rv, rt := reflect.ValueOf(o), reflect.TypeOf(o)
 	if rv.Kind() == reflect.Ptr {
 		readReflectBinary(rv.Elem(), rt.Elem(), Options{}, r, n, err)
-		return o
 	} else {
-		panic("ReadBinaryPtr expects o to be a pointer")
+		PanicSanity("ReadBinaryPtr expects o to be a pointer")
 	}
+	return o
 }
 
 func WriteBinary(o interface{}, w io.Writer, n *int64, err *error) {
@@ -51,16 +61,44 @@ func ReadJSON(o interface{}, bytes []byte, err *error) interface{} {
 	return ReadJSONObject(o, object, err)
 }
 
+func ReadJSONPtr(o interface{}, bytes []byte, err *error) interface{} {
+	var object interface{}
+	*err = json.Unmarshal(bytes, &object)
+	if *err != nil {
+		return o
+	}
+
+	return ReadJSONObjectPtr(o, object, err)
+}
+
 func ReadJSONObject(o interface{}, object interface{}, err *error) interface{} {
 	rv, rt := reflect.ValueOf(o), reflect.TypeOf(o)
 	if rv.Kind() == reflect.Ptr {
-		readReflectJSON(rv.Elem(), rt.Elem(), object, err)
-		return o
+		if rv.IsNil() {
+			// This allows ReadJSONObject() to return a nil pointer
+			// if the value read is nil.
+			rvPtr := reflect.New(rt)
+			ReadJSONObjectPtr(rvPtr.Interface(), object, err)
+			return rvPtr.Elem().Interface()
+		} else {
+			readReflectJSON(rv, rt, object, err)
+			return o
+		}
 	} else {
 		ptrRv := reflect.New(rt)
 		readReflectJSON(ptrRv.Elem(), rt, object, err)
 		return ptrRv.Elem().Interface()
 	}
+}
+
+func ReadJSONObjectPtr(o interface{}, object interface{}, err *error) interface{} {
+	rv, rt := reflect.ValueOf(o), reflect.TypeOf(o)
+	if rv.Kind() == reflect.Ptr {
+		readReflectJSON(rv.Elem(), rt.Elem(), object, err)
+	} else {
+		PanicSanity("ReadJSON(Object)Ptr expects o to be a pointer")
+	}
+	return o
 }
 
 func WriteJSON(o interface{}, w io.Writer, n *int64, err *error) {

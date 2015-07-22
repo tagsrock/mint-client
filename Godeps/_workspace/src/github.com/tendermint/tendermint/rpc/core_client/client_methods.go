@@ -4,7 +4,6 @@ package core_client
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	ctypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
@@ -16,7 +15,7 @@ import (
 )
 
 type Client interface {
-	BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error)
+	BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error)
 	BroadcastTx(tx types.Tx) (*ctypes.Receipt, error)
 	Call(address []byte, data []byte) (*ctypes.ResponseCall, error)
 	CallCode(code []byte, data []byte) (*ctypes.ResponseCall, error)
@@ -25,7 +24,7 @@ type Client interface {
 	GenPrivAccount() (*acm.PrivAccount, error)
 	Genesis() (*sm.GenesisDoc, error)
 	GetAccount(address []byte) (*acm.Account, error)
-	GetBlock(height uint) (*ctypes.ResponseGetBlock, error)
+	GetBlock(height int) (*ctypes.ResponseGetBlock, error)
 	GetName(name string) (*types.NameRegEntry, error)
 	GetStorage(address []byte, key []byte) (*ctypes.ResponseGetStorage, error)
 	ListAccounts() (*ctypes.ResponseListAccounts, error)
@@ -33,11 +32,11 @@ type Client interface {
 	ListUnconfirmedTxs() ([]types.Tx, error)
 	ListValidators() (*ctypes.ResponseListValidators, error)
 	NetInfo() (*ctypes.ResponseNetInfo, error)
-	SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error)
+	SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error)
 	Status() (*ctypes.ResponseStatus, error)
 }
 
-func (c *ClientHTTP) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientHTTP) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
 	values, err := argsToURLValues([]string{"minHeight", "maxHeight"}, minHeight, maxHeight)
 	if err != nil {
 		return nil, err
@@ -307,7 +306,7 @@ func (c *ClientHTTP) GetAccount(address []byte) (*acm.Account, error) {
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientHTTP) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	values, err := argsToURLValues([]string{"height"}, height)
 	if err != nil {
 		return nil, err
@@ -547,7 +546,7 @@ func (c *ClientHTTP) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error) {
+func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
 	values, err := argsToURLValues([]string{"tx", "privAccounts"}, tx, privAccounts)
 	if err != nil {
 		return nil, err
@@ -607,7 +606,7 @@ func (c *ClientHTTP) Status() (*ctypes.ResponseStatus, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientJSON) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["BlockchainInfo"],
@@ -850,7 +849,7 @@ func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientJSON) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetBlock"],
@@ -1066,7 +1065,7 @@ func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error) {
+func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["SignTx"],

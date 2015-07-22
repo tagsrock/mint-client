@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
@@ -20,6 +20,15 @@ var (
 	defaultAccountsCacheCapacity = 1000               // TODO adjust
 	unbondingPeriodBlocks        = int(60 * 24 * 365) // TODO probably better to make it time based.
 	validatorTimeoutBlocks       = int(10)            // TODO adjust
+)
+
+// reserved name reg entries
+const (
+	NewAccountTxDifficulty string = "NewAccountTxDifficulty"
+)
+
+var (
+	ReservedNames = []string{NewAccountTxDifficulty}
 )
 
 //-----------------------------------------------------------------------------
@@ -58,7 +67,7 @@ func LoadState(db dbm.DB) *State {
 		s.LastBondedValidators = binary.ReadBinary(&ValidatorSet{}, r, n, err).(*ValidatorSet)
 		s.UnbondingValidators = binary.ReadBinary(&ValidatorSet{}, r, n, err).(*ValidatorSet)
 		accountsHash := binary.ReadByteSlice(r, n, err)
-		s.accounts = merkle.NewIAVLTree(binary.BasicCodec, account.AccountCodec, defaultAccountsCacheCapacity, db)
+		s.accounts = merkle.NewIAVLTree(binary.BasicCodec, acm.AccountCodec, defaultAccountsCacheCapacity, db)
 		s.accounts.Load(accountsHash)
 		validatorInfosHash := binary.ReadByteSlice(r, n, err)
 		s.validatorInfos = merkle.NewIAVLTree(binary.BasicCodec, ValidatorInfoCodec, 0, db)
@@ -92,8 +101,7 @@ func (s *State) Save() {
 	binary.WriteByteSlice(s.validatorInfos.Hash(), buf, n, err)
 	binary.WriteByteSlice(s.nameReg.Hash(), buf, n, err)
 	if *err != nil {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic(*err)
+		PanicCrisis(*err)
 	}
 	s.DB.Set(stateKey, buf.Bytes())
 }
@@ -155,18 +163,18 @@ func (s *State) SetDB(db dbm.DB) {
 // The returned Account is a copy, so mutating it
 // has no side effects.
 // Implements Statelike
-func (s *State) GetAccount(address []byte) *account.Account {
+func (s *State) GetAccount(address []byte) *acm.Account {
 	_, acc := s.accounts.Get(address)
 	if acc == nil {
 		return nil
 	}
-	return acc.(*account.Account).Copy()
+	return acc.(*acm.Account).Copy()
 }
 
 // The account is copied before setting, so mutating it
 // afterwards has no side effects.
 // Implements Statelike
-func (s *State) UpdateAccount(account *account.Account) bool {
+func (s *State) UpdateAccount(account *acm.Account) bool {
 	return s.accounts.Set(account.Address, account.Copy())
 }
 
@@ -216,14 +224,12 @@ func (s *State) unbondValidator(val *Validator) {
 	// Move validator to UnbondingValidators
 	val, removed := s.BondedValidators.Remove(val.Address)
 	if !removed {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic("Couldn't remove validator for unbonding")
+		PanicCrisis("Couldn't remove validator for unbonding")
 	}
 	val.UnbondHeight = s.LastBlockHeight + 1
 	added := s.UnbondingValidators.Add(val)
 	if !added {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic("Couldn't add validator for unbonding")
+		PanicCrisis("Couldn't add validator for unbonding")
 	}
 }
 
@@ -231,35 +237,29 @@ func (s *State) rebondValidator(val *Validator) {
 	// Move validator to BondingValidators
 	val, removed := s.UnbondingValidators.Remove(val.Address)
 	if !removed {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic("Couldn't remove validator for rebonding")
+		PanicCrisis("Couldn't remove validator for rebonding")
 	}
 	val.BondHeight = s.LastBlockHeight + 1
 	added := s.BondedValidators.Add(val)
 	if !added {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic("Couldn't add validator for rebonding")
+		PanicCrisis("Couldn't add validator for rebonding")
 	}
 }
 
 func (s *State) releaseValidator(val *Validator) {
 	// Update validatorInfo
 	valInfo := s.GetValidatorInfo(val.Address)
-	// SANITY CHECK
 	if valInfo == nil {
-		panic("Couldn't find validatorInfo for release")
+		PanicSanity("Couldn't find validatorInfo for release")
 	}
-	// SANITY CHECK END
 	valInfo.ReleasedHeight = s.LastBlockHeight + 1
 	s.SetValidatorInfo(valInfo)
 
 	// Send coins back to UnbondTo outputs
 	accounts, err := getOrMakeOutputs(s, nil, valInfo.UnbondTo)
-	// SANITY CHECK
 	if err != nil {
-		panic("Couldn't get or make unbondTo accounts")
+		PanicSanity("Couldn't get or make unbondTo accounts")
 	}
-	// SANITY CHECK END
 	adjustByOutputs(accounts, valInfo.UnbondTo)
 	for _, acc := range accounts {
 		s.UpdateAccount(acc)
@@ -268,19 +268,16 @@ func (s *State) releaseValidator(val *Validator) {
 	// Remove validator from UnbondingValidators
 	_, removed := s.UnbondingValidators.Remove(val.Address)
 	if !removed {
-		// SOMETHING HAS GONE HORRIBLY WRONG
-		panic("Couldn't remove validator for release")
+		PanicCrisis("Couldn't remove validator for release")
 	}
 }
 
 func (s *State) destroyValidator(val *Validator) {
 	// Update validatorInfo
 	valInfo := s.GetValidatorInfo(val.Address)
-	// SANITY CHECK
 	if valInfo == nil {
-		panic("Couldn't find validatorInfo for release")
+		PanicSanity("Couldn't find validatorInfo for release")
 	}
-	// SANITY CHECK END
 	valInfo.DestroyedHeight = s.LastBlockHeight + 1
 	valInfo.DestroyedAmount = val.VotingPower
 	s.SetValidatorInfo(valInfo)
@@ -290,8 +287,7 @@ func (s *State) destroyValidator(val *Validator) {
 	if !removed {
 		_, removed := s.UnbondingValidators.Remove(val.Address)
 		if !removed {
-			// SOMETHING HAS GONE HORRIBLY WRONG
-			panic("Couldn't remove validator for destruction")
+			PanicCrisis("Couldn't remove validator for destruction")
 		}
 	}
 

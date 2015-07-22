@@ -3,7 +3,6 @@ package merkle
 import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common/test"
-
 	"testing"
 )
 

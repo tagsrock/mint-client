@@ -2,11 +2,12 @@ package types
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"sync"
+
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
@@ -14,12 +15,13 @@ import (
 )
 
 const (
-	partSize = 4096 // 4KB
+	partSize = 4096
 )
 
 var (
-	ErrPartSetUnexpectedIndex = errors.New("Error part set unexpected index")
-	ErrPartSetInvalidProof    = errors.New("Error part set invalid proof")
+	ErrPartSetUnexpectedIndex = // 4KB
+	errors.New("Error part set unexpected index")
+	ErrPartSetInvalidProof = errors.New("Error part set invalid proof")
 )
 
 type Part struct {
@@ -34,11 +36,8 @@ func (part *Part) Hash() []byte {
 	if part.hash != nil {
 		return part.hash
 	} else {
-		hasher := sha256.New()
-		_, err := hasher.Write(part.Bytes)
-		if err != nil {
-			panic(err)
-		}
+		hasher := ripemd160.New()
+		hasher.Write(part.Bytes) // doesn't err
 		part.hash = hasher.Sum(nil)
 		return part.hash
 	}
@@ -225,7 +224,7 @@ func (ps *PartSet) IsComplete() bool {
 
 func (ps *PartSet) GetReader() io.Reader {
 	if !ps.IsComplete() {
-		panic("Cannot GetReader() on incomplete PartSet")
+		PanicSanity("Cannot GetReader() on incomplete PartSet")
 	}
 	buf := []byte{}
 	for _, part := range ps.parts {

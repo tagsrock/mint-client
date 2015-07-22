@@ -18,6 +18,14 @@ func EventStringAccReceive(addr []byte) string {
 	return fmt.Sprintf("Acc/%X/Receive", addr)
 }
 
+func EventStringLogEvent(addr []byte) string {
+	return fmt.Sprintf("Log/%X", addr)
+}
+
+func EventStringPermissions(name string) string {
+	return fmt.Sprintf("Permissions/%s", name)
+}
+
 func EventStringBond() string {
 	return "Bond"
 }
@@ -62,23 +70,7 @@ type CallData struct {
 type EventMsgCall struct {
 	CallData  *CallData `json:"call_data"`
 	Origin    []byte    `json:"origin"`
-	TxId      []byte    `json:"tx_id"`
+	TxID      []byte    `json:"tx_id"`
 	Return    []byte    `json:"return"`
 	Exception string    `json:"exception"`
 }
-
-/*
-Acc/XYZ/Input -> full tx or {full tx, return value, exception}
-Acc/XYZ/Output -> full tx
-Acc/XYZ/Receive -> full tx, return value, exception, (optionally?) calldata
-Bond -> full tx
-Unbond -> full tx
-Rebond -> full tx
-Dupeout -> full tx
-NewBlock -> full block
-Fork -> block A, block B
-
-Log -> Fuck this
-NewPeer -> peer
-Alert -> alert msg
-*/

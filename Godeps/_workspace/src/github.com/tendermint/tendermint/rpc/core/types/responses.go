@@ -1,7 +1,7 @@
 package core_types
 
 import (
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	sm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
@@ -18,8 +18,8 @@ type ResponseCall struct {
 }
 
 type ResponseListAccounts struct {
-	BlockHeight int                `json:"block_height"`
-	Accounts    []*account.Account `json:"accounts"`
+	BlockHeight int            `json:"block_height"`
+	Accounts    []*acm.Account `json:"accounts"`
 }
 
 type StorageItem struct {
@@ -49,14 +49,12 @@ type Receipt struct {
 }
 
 type ResponseStatus struct {
-	Moniker           string         `json:"moniker"`
-	ChainID           string         `json:"chain_id"`
-	Version           string         `json:"version"`
-	GenesisHash       []byte         `json:"genesis_hash"`
-	PubKey            account.PubKey `json:"pub_key"`
-	LatestBlockHash   []byte         `json:"latest_block_hash"`
-	LatestBlockHeight int            `json:"latest_block_height"`
-	LatestBlockTime   int64          `json:"latest_block_time"` // nano
+	NodeInfo          *types.NodeInfo `json:"node_info"`
+	GenesisHash       []byte          `json:"genesis_hash"`
+	PubKey            acm.PubKey      `json:"pub_key"`
+	LatestBlockHash   []byte          `json:"latest_block_hash"`
+	LatestBlockHeight int             `json:"latest_block_height"`
+	LatestBlockTime   int64           `json:"latest_block_time"` // nano
 }
 
 type ResponseNetInfo struct {

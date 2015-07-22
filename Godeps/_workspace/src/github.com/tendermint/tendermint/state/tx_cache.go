@@ -1,10 +1,10 @@
 package state
 
 import (
-	ac "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
-	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types" // for GlobalPermissionAddress ...
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm" // for GlobalPermissionAddress ...
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm/sha3"
 )
 
@@ -42,23 +42,19 @@ func (cache *TxCache) GetAccount(addr Word256) *vm.Account {
 
 func (cache *TxCache) UpdateAccount(acc *vm.Account) {
 	addr := acc.Address
-	// SANITY CHECK
 	_, removed := vmUnpack(cache.accounts[addr])
 	if removed {
-		panic("UpdateAccount on a removed account")
+		PanicSanity("UpdateAccount on a removed account")
 	}
-	// SANITY CHECK END
 	cache.accounts[addr] = vmAccountInfo{acc, false}
 }
 
 func (cache *TxCache) RemoveAccount(acc *vm.Account) {
 	addr := acc.Address
-	// SANITY CHECK
 	_, removed := vmUnpack(cache.accounts[addr])
 	if removed {
-		panic("RemoveAccount on a removed account")
+		PanicSanity("RemoveAccount on a removed account")
 	}
-	// SANITY CHECK END
 	cache.accounts[addr] = vmAccountInfo{acc, true}
 }
 
@@ -86,8 +82,9 @@ func (cache *TxCache) CreateAccount(creator *vm.Account) *vm.Account {
 		cache.accounts[addr] = vmAccountInfo{account, false}
 		return account
 	} else {
-		// NONCE HANDLING SANITY CHECK OR SHA3 IS BROKEN
-		panic(Fmt("Could not create account, address already exists: %X", addr))
+		// either we've messed up nonce handling, or sha3 is broken
+		PanicSanity(Fmt("Could not create account, address already exists: %X", addr))
+		return nil
 	}
 }
 
@@ -108,12 +105,10 @@ func (cache *TxCache) GetStorage(addr Word256, key Word256) Word256 {
 
 // NOTE: Set value to zero to removed from the trie.
 func (cache *TxCache) SetStorage(addr Word256, key Word256, value Word256) {
-	// SANITY CHECK
 	_, removed := vmUnpack(cache.accounts[addr])
 	if removed {
-		panic("SetStorage() on a removed account")
+		PanicSanity("SetStorage() on a removed account")
 	}
-	// SANITY CHECK END
 	cache.storages[Tuple256{addr, key}] = value
 }
 
@@ -158,7 +153,7 @@ func NewContractAddress(caller []byte, nonce int) []byte {
 }
 
 // Converts backend.Account to vm.Account struct.
-func toVMAccount(acc *ac.Account) *vm.Account {
+func toVMAccount(acc *acm.Account) *vm.Account {
 	return &vm.Account{
 		Address:     LeftPadWord256(acc.Address),
 		Balance:     acc.Balance,
@@ -171,8 +166,8 @@ func toVMAccount(acc *ac.Account) *vm.Account {
 }
 
 // Converts vm.Account to backend.Account struct.
-func toStateAccount(acc *vm.Account) *ac.Account {
-	pubKey, ok := acc.Other.(ac.PubKey)
+func toStateAccount(acc *vm.Account) *acm.Account {
+	pubKey, ok := acc.Other.(acm.PubKey)
 	if !ok {
 		pubKey = nil
 	}
@@ -183,7 +178,7 @@ func toStateAccount(acc *vm.Account) *ac.Account {
 	} else {
 		storageRoot = acc.StorageRoot.Bytes()
 	}
-	return &ac.Account{
+	return &acm.Account{
 		Address:     acc.Address.Postfix(20),
 		PubKey:      pubKey,
 		Balance:     acc.Balance,

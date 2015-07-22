@@ -4,6 +4,15 @@ import (
 	"regexp"
 )
 
+// reserved name reg entries
+const (
+	NameNewAccountTxDifficulty string = "NewAccountTxDifficulty"
+)
+
+var (
+	ReservedNames = []string{NameNewAccountTxDifficulty}
+)
+
 var (
 	MinNameRegistrationPeriod int = 5
 
