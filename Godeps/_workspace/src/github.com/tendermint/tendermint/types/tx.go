@@ -21,9 +21,7 @@ var (
 	ErrTxInvalidPubKey        = errors.New("Error invalid pubkey")
 	ErrTxInvalidSignature     = errors.New("Error invalid signature")
 	ErrTxInvalidString        = errors.New("Error invalid string")
-	ErrTxIncorrectOwner       = errors.New("Error incorrect owner")
-	ErrTxInvalidDifficulty    = errors.New("Error invalid difficulty")
-	ErrTxFeatureNotEnabled    = errors.New("Error feature not enabled")
+	ErrIncorrectOwner         = errors.New("Error incorrect owner")
 )
 
 type ErrTxInvalidSequence struct {
@@ -50,7 +48,6 @@ Validation Txs:
 
 Admin Txs:
  - PermissionsTx
- - NewAccountTx
 */
 
 type Tx interface {
@@ -72,7 +69,6 @@ const (
 
 	// Admin transactions
 	TxTypePermissions = byte(0x20)
-	TxTypeNewAccount  = byte(0x21)
 )
 
 // for binary.readReflect
@@ -86,7 +82,6 @@ var _ = binary.RegisterInterface(
 	binary.ConcreteType{&RebondTx{}, TxTypeRebond},
 	binary.ConcreteType{&DupeoutTx{}, TxTypeDupeout},
 	binary.ConcreteType{&PermissionsTx{}, TxTypePermissions},
-	binary.ConcreteType{&NewAccountTx{}, TxTypeNewAccount},
 )
 
 //-----------------------------------------------------------------------------
@@ -344,30 +339,6 @@ func (tx *PermissionsTx) WriteSignBytes(chainID string, w io.Writer, n *int64, e
 
 func (tx *PermissionsTx) String() string {
 	return Fmt("PermissionsTx{%v -> %v}", tx.Input, tx.PermArgs)
-}
-
-//-----------------------------------------------------------------------------
-
-type NewAccountTxInfo struct {
-	PoWTarget []byte `json:"pow_target"`
-	Balance   int64  `json:"balance"`
-}
-
-type NewAccountTx struct {
-	Input *TxInput `json:"input"`
-	Nonce []byte   `json:"nonce"`
-}
-
-func (tx *NewAccountTx) WriteSignBytes(chainID string, w io.Writer, n *int64, err *error) {
-	binary.WriteTo([]byte(Fmt(`{"chain_id":%s`, jsonEscape(chainID))), w, n, err)
-	binary.WriteTo([]byte(Fmt(`,"tx":[%v,{"input":`, TxTypeNewAccount)), w, n, err)
-	tx.Input.WriteSignBytes(w, n, err)
-	binary.WriteTo([]byte(Fmt(`,"nonce":%s`, jsonEscape(Fmt("%X", tx.Nonce)))), w, n, err)
-	binary.WriteTo([]byte(`}]}`), w, n, err)
-}
-
-func (tx *NewAccountTx) String() string {
-	return Fmt("NewAccount{%v}", tx.Input)
 }
 
 //-----------------------------------------------------------------------------

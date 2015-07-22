@@ -86,7 +86,7 @@ func TestNameTxSignable(t *testing.T) {
 	expected := Fmt(`{"chain_id":"%s","tx":[3,{"data":"secretly.not.google.com","fee":1000,"input":{"address":"696E70757431","amount":12345,"sequence":250},"name":"google.com"}]}`,
 		config.GetString("chain_id"))
 	if signStr != expected {
-		t.Errorf("Got unexpected sign string for NameTx. Expected:\n%v\nGot:\n%v", expected, signStr)
+		t.Errorf("Got unexpected sign string for CallTx. Expected:\n%v\nGot:\n%v", expected, signStr)
 	}
 }
 
@@ -175,24 +175,6 @@ func TestPermissionsTxSignable(t *testing.T) {
 	expected := Fmt(`{"chain_id":"%s","tx":[32,{"args":"[2,{"address":"6164647265737331","permission":1,"value":true}]","input":{"address":"696E70757431","amount":12345,"sequence":250}}]}`,
 		config.GetString("chain_id"))
 	if signStr != expected {
-		t.Errorf("Got unexpected sign string for PermissionsTx. Expected:\n%v\nGot:\n%v", expected, signStr)
-	}
-}
-
-func TestNewAccountTxSignable(t *testing.T) {
-	newAccTx := &NewAccountTx{
-		Input: &TxInput{
-			Address:  []byte("input1"),
-			Amount:   12345,
-			Sequence: 250,
-		},
-		Nonce: []byte{4},
-	}
-	signBytes := acm.SignBytes(chainID, newAccTx)
-	signStr := string(signBytes)
-	expected := Fmt(`{"chain_id":"%s","tx":[33,{"input":{"address":"696E70757431","amount":12345,"sequence":250},"nonce":"04"}]}`,
-		config.GetString("chain_id"))
-	if signStr != expected {
-		t.Errorf("Got unexpected sign string for NewAccountTx. Expected:\n%v\nGot:\n%v", expected, signStr)
+		t.Errorf("Got unexpected sign string for CallTx. Expected:\n%v\nGot:\n%v", expected, signStr)
 	}
 }

@@ -4,15 +4,6 @@ import (
 	"regexp"
 )
 
-// reserved name reg entries
-const (
-	NewAccountTxInfoName string = "NewAccountTxInfo"
-)
-
-var (
-	ReservedNames = []string{NewAccountTxInfoName}
-)
-
 var (
 	MinNameRegistrationPeriod int = 5
 

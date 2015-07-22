@@ -22,15 +22,6 @@ var (
 	validatorTimeoutBlocks       = int(10)            // TODO adjust
 )
 
-// reserved name reg entries
-const (
-	NewAccountTxDifficulty string = "NewAccountTxDifficulty"
-)
-
-var (
-	ReservedNames = []string{NewAccountTxDifficulty}
-)
-
 //-----------------------------------------------------------------------------
 
 // NOTE: not goroutine-safe.

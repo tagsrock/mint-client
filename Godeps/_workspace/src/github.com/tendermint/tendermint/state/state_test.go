@@ -2,14 +2,11 @@ package state
 
 import (
 	"bytes"
-	"encoding/hex"
-	"testing"
-	"time"
-
-	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	_ "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint_test"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"testing"
+	"time"
 )
 
 func execTxWithState(state *State, tx types.Tx, runCall bool) error {
@@ -211,50 +208,6 @@ func TestTxSequence(t *testing.T) {
 					acc0.Sequence, newAcc0.Sequence)
 			}
 		}
-	}
-}
-
-func TestNewAccountTxs(t *testing.T) {
-	state, _, _ := RandGenesisState(3, true, 1000, 1, true, 1000)
-
-	privAccount := acm.GenPrivAccount()
-	tx := types.NewNewAccountTxWithNonce(privAccount.PubKey, []byte{0})
-	log.Debug("NewAccountTx", "nonce", hex.EncodeToString(tx.Nonce), "hash", hex.EncodeToString(binary.BinaryRipemd160(tx)))
-	tx.Sign(state.ChainID, privAccount)
-
-	if err := execTxWithState(state, tx, true); err != types.ErrTxFeatureNotEnabled {
-		t.Fatalf("Expected ErrFeatureNotEnabled on new account for %X: %v", privAccount.PubKey.Address(), err)
-	}
-
-	difficulty := make([]byte, 20)
-	for i := 0; i < 20; i++ {
-		difficulty[i] = 255
-	}
-	difficulty[0] = 0
-	difficulty[1] = 0
-	balance := int64(1000)
-	newAccountInfo := types.NewAccountTxInfo{difficulty, balance}
-	n, errr := new(int64), new(error)
-	w := new(bytes.Buffer)
-	binary.WriteJSON(newAccountInfo, w, n, errr)
-	state.UpdateNameRegEntry(&types.NameRegEntry{Expires: int(1) << 62, Name: types.NewAccountTxInfoName, Data: string(w.Bytes())})
-
-	tx, err := types.NewNewAccountTx(state, privAccount.PubKey, state.ChainID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	log.Debug("NewAccountTx", "nonce", hex.EncodeToString(tx.Nonce), "hash", hex.EncodeToString(binary.BinaryRipemd160(tx)))
-	tx.Sign(state.ChainID, privAccount)
-
-	if err := execTxWithState(state, tx, true); err != nil {
-		t.Fatalf("Unexpected error on new account for %X: %v", privAccount.PubKey.Address(), err)
-	}
-	acc := state.GetAccount(privAccount.PubKey.Address())
-	if acc == nil {
-		t.Fatal("Expected account to exist after NewAccountTx")
-	}
-	if acc.Balance != balance {
-		t.Fatalf("Wrong balance on new account. Got %d, expected %d", acc.Balance, balance)
 	}
 }
 
@@ -566,7 +519,7 @@ proof-of-work chain as proof of what happened while they were gone `
 	{
 		state := state.Copy()
 		tx := &types.BondTx{
-			PubKey: acc0PubKey.(acm.PubKeyEd25519),
+			PubKey: acc0PubKey.(account.PubKeyEd25519),
 			Inputs: []*types.TxInput{
 				&types.TxInput{
 					Address:  acc0.Address,
@@ -582,7 +535,7 @@ proof-of-work chain as proof of what happened while they were gone `
 				},
 			},
 		}
-		tx.Signature = privAccounts[0].Sign(state.ChainID, tx).(acm.SignatureEd25519)
+		tx.Signature = privAccounts[0].Sign(state.ChainID, tx).(account.SignatureEd25519)
 		tx.Inputs[0].Signature = privAccounts[0].Sign(state.ChainID, tx)
 		err := execTxWithState(state, tx, true)
 		if err != nil {
@@ -623,7 +576,7 @@ func TestAddValidator(t *testing.T) {
 	// The first privAccount will become a validator
 	acc0 := privAccounts[0]
 	bondTx := &types.BondTx{
-		PubKey: acc0.PubKey.(acm.PubKeyEd25519),
+		PubKey: acc0.PubKey.(account.PubKeyEd25519),
 		Inputs: []*types.TxInput{
 			&types.TxInput{
 				Address:  acc0.Address,
@@ -639,7 +592,7 @@ func TestAddValidator(t *testing.T) {
 			},
 		},
 	}
-	bondTx.Signature = acc0.Sign(s0.ChainID, bondTx).(acm.SignatureEd25519)
+	bondTx.Signature = acc0.Sign(s0.ChainID, bondTx).(account.SignatureEd25519)
 	bondTx.Inputs[0].Signature = acc0.Sign(s0.ChainID, bondTx)
 
 	// Make complete block and blockParts

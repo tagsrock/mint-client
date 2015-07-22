@@ -1,21 +1,13 @@
 package types
 
 import (
-	"bytes"
 	"fmt"
-
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
 
 type AccountGetter interface {
 	GetAccount(addr []byte) *acm.Account
-}
-
-type NameGetter interface {
-	GetNameRegEntry(name string) *NameRegEntry
 }
 
 //----------------------------------------------------------------------------
@@ -263,59 +255,6 @@ func NewPermissionsTxWithNonce(from acm.PubKey, args ptypes.PermArgs, nonce int)
 }
 
 func (tx *PermissionsTx) Sign(chainID string, privAccount *acm.PrivAccount) {
-	tx.Input.PubKey = privAccount.PubKey
-	tx.Input.Signature = privAccount.Sign(chainID, tx)
-}
-
-//----------------------------------------------------------------------------
-// NewAccountTx interface for creating tx (and doing proof of work)
-
-// NewAccountTx needs the chainID for the proof of work
-func NewNewAccountTx(st NameGetter, from acm.PubKey, chainID string) (*NewAccountTx, error) {
-	entry := st.GetNameRegEntry(NewAccountTxInfoName)
-	if entry == nil {
-		return nil, fmt.Errorf("Chain does not support new accounts")
-	}
-	var newAccountInfo NewAccountTxInfo
-	err := new(error)
-	binary.ReadJSON(&newAccountInfo, []byte(entry.Data), err)
-	if *err != nil {
-		return nil, fmt.Errorf("NameRegEntry at %s must be json encoded NewAccountTxInfo. Tell your chain operator to clean up their act", NewAccountTxInfoName)
-	}
-	target := newAccountInfo.PoWTarget
-
-	var tx *NewAccountTx
-	nonce64 := RandInt64()
-	for {
-		nonce := Int64ToWord256(nonce64).Postfix(20)
-		tx = NewNewAccountTxWithNonce(from, nonce)
-		h := binary.BinaryRipemd160(acm.SignBytes(chainID, tx))
-		if bytes.Compare(h, target) < 0 {
-			break
-		}
-		nonce64 += 1
-	}
-	return tx, nil
-}
-
-// here the nonce is for proof of work
-func NewNewAccountTxWithNonce(from acm.PubKey, nonce []byte) *NewAccountTx {
-	addr := from.Address()
-	input := &TxInput{
-		Address:   addr,
-		Amount:    0,
-		Sequence:  0,
-		Signature: acm.SignatureEd25519{},
-		PubKey:    from,
-	}
-
-	return &NewAccountTx{
-		Input: input,
-		Nonce: nonce,
-	}
-}
-
-func (tx *NewAccountTx) Sign(chainID string, privAccount *acm.PrivAccount) {
 	tx.Input.PubKey = privAccount.PubKey
 	tx.Input.Signature = privAccount.Sign(chainID, tx)
 }

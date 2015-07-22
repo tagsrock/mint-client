@@ -2,13 +2,10 @@ package state
 
 import (
 	"bytes"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
@@ -540,14 +537,6 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 			return types.ErrTxInvalidString
 		}
 
-		// check against reserved names
-		for _, rn := range types.ReservedNames {
-			if rn == tx.Name {
-				log.Info(Fmt("The string \"%s\" is a reserved name", tx.Name))
-				return types.ErrTxInvalidString
-			}
-		}
-
 		value := tx.Input.Amount - tx.Fee
 
 		// let's say cost of a name for one block is len(data) + 32
@@ -567,7 +556,7 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 				// ensure we are owner
 				if bytes.Compare(entry.Owner, tx.Input.Address) != 0 {
 					log.Info(Fmt("Sender %X is trying to update a name (%s) for which he is not owner", tx.Input.Address, tx.Name))
-					return types.ErrTxIncorrectOwner
+					return types.ErrIncorrectOwner
 				}
 			} else {
 				expired = true
@@ -891,88 +880,6 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 		if evc != nil {
 			evc.FireEvent(types.EventStringAccInput(tx.Input.Address), tx)
 			evc.FireEvent(types.EventStringPermissions(ptypes.PermFlagToString(permFlag)), tx)
-		}
-
-		return nil
-
-	case *types.NewAccountTx:
-		var inAcc *acm.Account
-
-		// First thing's first, grab the required difficulty
-		// and check the proof of work
-		entry := _s.GetNameRegEntry(types.NewAccountTxInfoName)
-		if entry == nil {
-			log.Info(types.ErrTxFeatureNotEnabled.Error(), "feature", "NewAccountTx")
-			return types.ErrTxFeatureNotEnabled
-		}
-		var newAccountInfo types.NewAccountTxInfo
-		if err := json.Unmarshal([]byte(entry.Data), &newAccountInfo); err != nil {
-			log.Info("Error unmarshalling entry data into NewAccountTxInfo", "error", err, "entry", entry.Data)
-			return types.ErrTxFeatureNotEnabled
-		}
-		target := newAccountInfo.PoWTarget
-		signBytes := acm.SignBytes(_s.ChainID, tx)
-		h := binary.BinaryRipemd160(signBytes)
-		if bytes.Compare(h, target) > 0 {
-			log.Debug(types.ErrTxInvalidDifficulty.Error(), "target", hex.EncodeToString(target), "hash", hex.EncodeToString(h))
-			return types.ErrTxInvalidDifficulty
-		}
-
-		// Now validate input
-		inAcc = blockCache.GetAccount(tx.Input.Address)
-		if inAcc != nil {
-			log.Debug(Fmt("Account %X already exists", tx.Input.Address))
-			return types.ErrTxInvalidAddress
-		}
-
-		inAcc = &acm.Account{
-			Address:     tx.Input.Address,
-			PubKey:      nil,
-			Sequence:    0, // note the sequence is incremented by 1 by this tx
-			Balance:     0,
-			Permissions: ptypes.ZeroAccountPermissions,
-		}
-
-		// pub key must be present in tx
-		if tx.Input.PubKey == nil {
-			return types.ErrTxUnknownPubKey
-		} else if !bytes.Equal(tx.Input.PubKey.Address(), tx.Input.Address) {
-			return types.ErrTxUnknownPubKey
-		}
-		inAcc.PubKey = tx.Input.PubKey
-
-		// custom validateInput:
-
-		// Check TxInput basic
-		if len(tx.Input.Address) != 20 {
-			return types.ErrTxInvalidAddress
-		}
-		// Check signatures
-		if !inAcc.PubKey.VerifyBytes(signBytes, tx.Input.Signature) {
-			return types.ErrTxInvalidSignature
-		}
-		// Check sequences
-		if tx.Input.Sequence != 0 {
-			return types.ErrTxInvalidSequence{
-				Got:      tx.Input.Sequence,
-				Expected: 0,
-			}
-		}
-		// Check amount
-		if tx.Input.Amount != 0 {
-			log.Debug("A greedy little bugger!")
-			return types.ErrTxInsufficientFunds
-		}
-
-		log.Debug("New NewAccountTx", "address", tx.Input.Address, "nonce", tx.Nonce)
-
-		// Good!
-		inAcc.Sequence += 1
-		inAcc.Balance = newAccountInfo.Balance
-		blockCache.UpdateAccount(inAcc)
-
-		if evc != nil {
-			evc.FireEvent(types.EventStringAccInput(tx.Input.Address), tx)
 		}
 
 		return nil
