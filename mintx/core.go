@@ -8,8 +8,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
@@ -230,6 +234,7 @@ func (n NameGetter) GetNameRegEntry(name string) *types.NameRegEntry {
 	return entry
 }
 
+/*
 func coreNewAccount(nodeAddr, pubkey, chainID string) (*types.NewAccountTx, error) {
 	pub, _, _, _, err := checkCommon(nodeAddr, pubkey, "", "0", "0")
 	if err != nil {
@@ -239,6 +244,7 @@ func coreNewAccount(nodeAddr, pubkey, chainID string) (*types.NewAccountTx, erro
 	client := cclient.NewClient(nodeAddr, "HTTP")
 	return types.NewNewAccountTx(NameGetter{client}, pub, chainID)
 }
+*/
 
 func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, error) {
 	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, "", amtS, nonceS)
@@ -380,6 +386,160 @@ func unpackResponse(resp *http.Response) (string, string, error) {
 		return "", "", err
 	}
 	return r.Response, r.Error, nil
+}
+
+//------------------------------------------------------------------------------------
+// sign and broadcast convenience
+
+// tx has either one input or we default to the first one (ie for send/bond)
+// TODO: better support for multisig..
+func signTx(c *cli.Context, chainID string, tx_ types.Tx) ([]byte, types.Tx) {
+	signAddr := c.String("sign-addr")
+	signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx_))
+	var inputAddr []byte
+	var sigED account.SignatureEd25519
+	switch tx := tx_.(type) {
+	case *types.SendTx:
+		inputAddr = tx.Inputs[0].Address
+		defer func(s *account.SignatureEd25519) { tx.Inputs[0].Signature = *s }(&sigED)
+	case *types.NameTx:
+		inputAddr = tx.Input.Address
+		defer func(s *account.SignatureEd25519) { tx.Input.Signature = *s }(&sigED)
+	case *types.CallTx:
+		inputAddr = tx.Input.Address
+		defer func(s *account.SignatureEd25519) { tx.Input.Signature = *s }(&sigED)
+	case *types.PermissionsTx:
+		inputAddr = tx.Input.Address
+		defer func(s *account.SignatureEd25519) { tx.Input.Signature = *s }(&sigED)
+	case *types.BondTx:
+		inputAddr = tx.Inputs[0].Address
+		defer func(s *account.SignatureEd25519) { tx.Inputs[0].Signature = *s }(&sigED)
+	case *types.UnbondTx:
+		inputAddr = tx.Address
+		defer func(s *account.SignatureEd25519) { tx.Signature = *s }(&sigED)
+	case *types.RebondTx:
+		inputAddr = tx.Address
+		defer func(s *account.SignatureEd25519) { tx.Signature = *s }(&sigED)
+	}
+	addrHex := fmt.Sprintf("%X", inputAddr)
+	sig, err := coreSign(signBytes, addrHex, signAddr)
+	ifExit(err)
+	sigED = account.SignatureEd25519(sig)
+	logger.Debugf("%X\n", sig)
+	return inputAddr, tx_
+}
+
+func signAndBroadcast(c *cli.Context, chainID, nodeAddr string, tx types.Tx) {
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
+	var inputAddr []byte
+	if sign {
+		inputAddr, tx = signTx(c, chainID, tx)
+	}
+	if wait {
+		ch, err := subscribeAndWait(tx, chainID, nodeAddr, inputAddr)
+		if err != nil {
+			logger.Errorln(err)
+		} else {
+			defer func() {
+				logger.Debugln("Waiting for tx to be committed ...")
+				msg := <-ch
+				if msg.Error != nil {
+					fmt.Printf("Encountered error waiting for event: %v\n", msg.Error)
+				} else {
+					fmt.Printf("Return Value: %X\n", msg.Value)
+					fmt.Printf("Exception: %s\n", msg.Exception)
+				}
+			}()
+		}
+	}
+	if broadcast {
+		receipt, err := coreBroadcast(tx, nodeAddr)
+		ifExit(err)
+		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
+	}
+}
+
+//------------------------------------------------------------------------------------
+// wait for events
+
+type Msg struct {
+	Value     []byte
+	Exception string
+	Error     error
+}
+
+func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (chan Msg, error) {
+	// subscribe to event and wait for tx to be committed
+	wsAddr := strings.TrimPrefix(nodeAddr, "http://")
+	wsAddr = "ws://" + wsAddr + "events"
+	fmt.Println(wsAddr)
+	wsc := cclient.NewWSClient(wsAddr)
+	_, err := wsc.Dial()
+	if err != nil {
+		return nil, fmt.Errorf("Error establishing websocket connection to wait for tx to get committed: %v", err)
+	}
+	eid := types.EventStringAccInput(inputAddr)
+
+	if err = wsc.Subscribe(eid); err != nil {
+		return nil, fmt.Errorf("Error subscribing to AccInput event: %v", err)
+	}
+
+	// reads on websocket and fires on the channel
+	readChan := wsc.Read()
+
+	// txs should take no more than 10 seconds
+	timeoutTicker := time.Tick(10 * time.Second)
+
+	resultChan := make(chan Msg, 1)
+	go func() {
+		for {
+
+			select {
+			case <-timeoutTicker:
+				resultChan <- Msg{Error: fmt.Errorf("timed out waiting for event")}
+				return
+			case msg := <-readChan:
+				if msg.Error != nil {
+					resultChan <- Msg{Error: fmt.Errorf("error reading websocket connection: %v", msg.Error)}
+					return
+				}
+				data := msg.Data
+				var response struct {
+					Event string               `json:"event"`
+					Data  types.EventMsgCallTx `json:"data"`
+					Error string               `json:"error"`
+				}
+				err := new(error)
+				binary.ReadJSON(&response, data, err)
+				if *err != nil {
+					resultChan <- Msg{Error: fmt.Errorf("error unmarshaling event data: %v", *err)}
+					return
+				}
+				if response.Error != "" {
+					resultChan <- Msg{Error: fmt.Errorf("response error: %v", response.Error)}
+					return
+				}
+				if response.Event != eid {
+					logger.Debugf("received unsolicited event! Got %s, expected %s\n", response.Event, eid)
+					continue
+				}
+				if !bytes.Equal(types.TxID(chainID, response.Data.Tx), types.TxID(chainID, tx)) {
+					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, response.Data.Tx))
+					continue
+				}
+
+				if response.Data.Exception != "" {
+					resultChan <- Msg{Value: response.Data.Return, Exception: response.Data.Exception}
+					return
+				}
+
+				// GOOD!
+				resultChan <- Msg{Value: response.Data.Return}
+				return
+			}
+		}
+	}()
+	return resultChan, nil
 }
 
 //------------------------------------------------------------------------------------

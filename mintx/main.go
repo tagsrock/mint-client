@@ -88,6 +88,11 @@ func main() {
 			Usage: "broadcast the transaction using the daemon at MINTX_NODE_ADDR",
 		}
 
+		waitFlag = cli.BoolFlag{
+			Name:  "wait",
+			Usage: "wait for the transaction to be committed in a block",
+		}
+
 		//----------------------------------------------------------------
 		// tx data flags
 
@@ -214,6 +219,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				amtFlag,
 				toFlag,
