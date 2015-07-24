@@ -12,12 +12,15 @@ import (
 	"time"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/gorilla/websocket"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
+	rpctypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	rpcserver "github.com/tendermint/tendermint/rpc/server"
 )
 
 //------------------------------------------------------------------------------------
@@ -471,46 +474,56 @@ type Msg struct {
 func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (chan Msg, error) {
 	// subscribe to event and wait for tx to be committed
 	wsAddr := strings.TrimPrefix(nodeAddr, "http://")
-	wsAddr = "ws://" + wsAddr + "events"
+	wsAddr = "ws://" + wsAddr + "websocket"
 	fmt.Println(wsAddr)
-	wsc := cclient.NewWSClient(wsAddr)
-	_, err := wsc.Dial()
+	dialer := websocket.DefaultDialer
+	rHeader := http.Header{}
+	conn, r, err := dialer.Dial(wsAddr, rHeader)
 	if err != nil {
 		return nil, fmt.Errorf("Error establishing websocket connection to wait for tx to get committed: %v", err)
 	}
 	eid := types.EventStringAccInput(inputAddr)
 
-	if err = wsc.Subscribe(eid); err != nil {
+	if err := conn.WriteJSON(rpctypes.RPCRequest{
+		JSONRPC: "2.0",
+		Id:      "",
+		Method:  "subscribe",
+		Params:  []interface{}{eid},
+	}); err != nil {
 		return nil, fmt.Errorf("Error subscribing to AccInput event: %v", err)
 	}
 
-	// reads on websocket and fires on the channel
-	readChan := wsc.Read()
-
-	// txs should take no more than 10 seconds
-	timeoutTicker := time.Tick(10 * time.Second)
+	go func() {
+		pingTicker := time.NewTicker((time.Second * rpcserver.WSReadTimeoutSeconds) / 2)
+		for {
+			select {
+			case <-pingTicker.C:
+				if err := conn.WriteControl(websocket.PingMessage, []byte("whatevs"), time.Now().Add(time.Second)); err != nil {
+					logger.Debugln("error writing ping:", err)
+				}
+			}
+		}
+	}()
 
 	resultChan := make(chan Msg, 1)
+
+	// Read message
 	go func() {
 		for {
-
-			select {
-			case <-timeoutTicker:
-				resultChan <- Msg{Error: fmt.Errorf("timed out waiting for event")}
-				return
-			case msg := <-readChan:
-				if msg.Error != nil {
-					resultChan <- Msg{Error: fmt.Errorf("error reading websocket connection: %v", msg.Error)}
-					return
-				}
-				data := msg.Data
+			_, p, err := conn.ReadMessage()
+			if err != nil {
+				resultChan <- Msg{Error: err}
+				break
+			} else {
 				var response struct {
-					Event string               `json:"event"`
-					Data  types.EventMsgCallTx `json:"data"`
-					Error string               `json:"error"`
+					Result struct {
+						Event string               `json:"event"`
+						Data  types.EventMsgCallTx `json:"data"`
+					} `json:"result"`
+					Error string `json:"error"`
 				}
 				err := new(error)
-				binary.ReadJSON(&response, data, err)
+				binary.ReadJSON(&response, p, err)
 				if *err != nil {
 					resultChan <- Msg{Error: fmt.Errorf("error unmarshaling event data: %v", *err)}
 					return
@@ -519,25 +532,34 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 					resultChan <- Msg{Error: fmt.Errorf("response error: %v", response.Error)}
 					return
 				}
-				if response.Event != eid {
-					logger.Debugf("received unsolicited event! Got %s, expected %s\n", response.Event, eid)
+				if response.Result.Event != eid {
+					logger.Debugf("received unsolicited event! Got %s, expected %s\n", response.Result.Event, eid)
 					continue
 				}
-				if !bytes.Equal(types.TxID(chainID, response.Data.Tx), types.TxID(chainID, tx)) {
-					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, response.Data.Tx))
+				if !bytes.Equal(types.TxID(chainID, response.Result.Data.Tx), types.TxID(chainID, tx)) {
+					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, response.Result.Data.Tx))
 					continue
 				}
 
-				if response.Data.Exception != "" {
-					resultChan <- Msg{Value: response.Data.Return, Exception: response.Data.Exception}
+				if response.Result.Data.Exception != "" {
+					resultChan <- Msg{Value: response.Result.Data.Return, Exception: response.Result.Data.Exception}
 					return
 				}
 
 				// GOOD!
-				resultChan <- Msg{Value: response.Data.Return}
+				resultChan <- Msg{Value: response.Result.Data.Return}
 				return
 			}
 		}
+	}()
+
+	// txs should take no more than 10 seconds
+	timeoutTicker := time.Tick(20 * time.Second)
+
+	go func() {
+		<-timeoutTicker
+		resultChan <- Msg{Error: fmt.Errorf("timed out waiting for event")}
+		return
 	}()
 	return resultChan, nil
 }
