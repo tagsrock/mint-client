@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
@@ -167,4 +168,74 @@ func cliRandom(cmd *cobra.Command, args []string) {
 		}
 	}
 	fmt.Printf("config.toml, genesis.json and priv_validator_X.json files saved in %s\n", DirFlag)
+}
+
+func cliMulti(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		Exit(fmt.Errorf("Enter a chain_id"))
+	}
+	chainID := args[0]
+
+	//TODO convert to addrs
+	if PubkeyFlag == "" {
+		Exit(fmt.Errorf("Enter one or more pub keys"))
+	}
+
+	pubkeys := strings.Split(PubkeyFlag, " ")
+
+	pubKeyBytes := make([][]byte, len(pubkeys))
+	for i, k := range pubkeys {
+		var err error
+		pubKeyBytes[i], err = hex.DecodeString(k)
+		if err != nil {
+			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
+		}
+	}
+
+	addrs := make([][]byte, len(pubkeys))
+	amt := int64(1) << 50
+
+	genDoc := state.GenesisDoc{
+		ChainID: chainID,
+	}
+
+	genDoc.Accounts = make([]state.GenesisAccount, len(addrs))
+	genDoc.Validators = make([]state.GenesisValidator, len(addrs))
+
+	for i, kb := range pubKeyBytes {
+		pubKey := account.PubKeyEd25519(kb)
+		addr := pubKey.Address()
+
+		genDoc.Accounts[i] = state.GenesisAccount{
+			Address: addr,
+			Amount:  amt,
+		}
+		genDoc.Validators[i] = state.GenesisValidator{
+			PubKey: pubKey,
+			Amount: amt,
+			UnbondTo: []state.BasicAccount{
+				state.BasicAccount{
+					Address: addr,
+					Amount:  amt,
+				},
+			},
+		}
+	}
+
+	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
+	binary.WriteJSON(genDoc, buf, n, err)
+	IfExit(*err)
+	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
+	genesisBytes := buf2.Bytes()
+
+	fmt.Println(string(genesisBytes))
+	if DirFlag == "" {
+		DirFlag = path.Join(DataContainersPath, chainID)
+	}
+	if _, err := os.Stat(DirFlag); err != nil {
+		IfExit(os.MkdirAll(DirFlag, 0700))
+	}
+
+	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
+	fmt.Printf("genesis.json saved in %s\n", DirFlag)
 }

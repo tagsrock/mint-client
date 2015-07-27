@@ -7,6 +7,7 @@ import (
 var (
 	DirFlag    string
 	PubkeyFlag string
+	//AddrsFlag  string
 )
 
 func main() {
@@ -24,13 +25,23 @@ func main() {
 		Long:  "Create <N> keys and a genesis.json with corresponding validators and chain_id <name>",
 		Run:   cliRandom,
 	}
-	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in")
+	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in. Default is ~/.eris/data/<chain_id>")
+
+	//XXX uses pubkey until I figure out how to do conversion
+	var multiCmd = &cobra.Command{
+		Use:   "multi",
+		Short: "mintgen multi <chain_id> --pub <pub_1> <pub_2> <pub_N>",
+		Long:  "Create a genesis.json with <chain_id> and N <pub>'s passed in, seperated by a space; --pub is req'd",
+		Run:   cliMulti,
+	}
+	multiCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
+	multiCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
 
 	var rootCmd = &cobra.Command{
 		Use:   "mintgen",
 		Short: "a tool for generating tendermint genesis files",
 		Long:  "a tool for generating tendermint genesis files",
 	}
-	rootCmd.AddCommand(singleCmd, randomCmd)
+	rootCmd.AddCommand(singleCmd, randomCmd, multiCmd)
 	rootCmd.Execute()
 }
