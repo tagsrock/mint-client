@@ -1,0 +1,70 @@
+{
+	"bonded_validators": null,
+	"last_bonded_validators": null,
+	"unbonding_validators": null,
+	"accounts": [
+		{
+			"address": "0000000000000000000000000000000000000000",
+			"pub_key": null,
+			"sequence": 0,
+			"balance": 1337,
+			"code": "",
+			"storage_root": "",
+			"permissions": {
+				"base": {
+					"perms": 2302,
+					"set": 16383
+				},
+				"roles": []
+			}
+		},
+		{
+			"address": "A88A61069B6660F30F65E8786AFDD4F1D8F625E9",
+			"pub_key": null,
+			"sequence": 0,
+			"balance": 1000000,
+			"code": "",
+			"storage_root": "",
+			"permissions": {
+				"base": {
+					"perms": 0,
+					"set": 0
+				},
+				"roles": []
+			}
+		},
+		{
+			"address": "EE2EE9247973B4AFC3867CFE5F415410AC251B61",
+			"pub_key": null,
+			"sequence": 0,
+			"balance": 1000000,
+			"code": "",
+			"storage_root": "",
+			"permissions": {
+				"base": {
+					"perms": 0,
+					"set": 0
+				},
+				"roles": []
+			}
+		},
+		{
+			"address": "F81CB9ED0A868BD961C4F5BBC0E39B763B89FCB6",
+			"pub_key": null,
+			"sequence": 0,
+			"balance": 690000000000,
+			"code": "",
+			"storage_root": "",
+			"permissions": {
+				"base": {
+					"perms": 0,
+					"set": 0
+				},
+				"roles": []
+			}
+		}
+	],
+	"accounts_storage": [],
+	"validator_infos": [],
+	"namereg": []
+}
