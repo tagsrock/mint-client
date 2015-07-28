@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	cfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	tmcfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint"

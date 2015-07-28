@@ -14,13 +14,13 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/gorilla/websocket"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
+	rpcserver "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/server"
 	rpctypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-	rpcserver "github.com/tendermint/tendermint/rpc/server"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 //------------------------------------------------------------------------------------
@@ -478,7 +478,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 	fmt.Println(wsAddr)
 	dialer := websocket.DefaultDialer
 	rHeader := http.Header{}
-	conn, r, err := dialer.Dial(wsAddr, rHeader)
+	conn, _, err := dialer.Dial(wsAddr, rHeader)
 	if err != nil {
 		return nil, fmt.Errorf("Error establishing websocket connection to wait for tx to get committed: %v", err)
 	}
@@ -523,7 +523,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 					Error string `json:"error"`
 				}
 				err := new(error)
-				binary.ReadJSON(&response, p, err)
+				wire.ReadJSON(&response, p, err)
 				if *err != nil {
 					resultChan <- Msg{Error: fmt.Errorf("error unmarshaling event data: %v", *err)}
 					return

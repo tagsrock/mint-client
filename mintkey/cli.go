@@ -9,7 +9,7 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 type PrivValidator struct {
@@ -38,13 +38,19 @@ func cliConvertErisKeyToPrivValidator(cmd *cobra.Command, args []string) {
 	pub, err := key.Pubkey()
 	ifExit(err)
 
+	var pubKey account.PubKeyEd25519
+	copy(pubKey[:], pub)
+
+	var privKey account.PrivKeyEd25519
+	copy(privKey[:], key.PrivateKey)
+
 	privVal := PrivValidator{
 		Address: addrBytes,
-		PubKey:  account.PubKeyEd25519(pub),
-		PrivKey: account.PrivKeyEd25519(key.PrivateKey),
+		PubKey:  pubKey,
+		PrivKey: privKey,
 	}
 
-	fmt.Println(string(binary.JSONBytes(privVal)))
+	fmt.Println(string(wire.JSONBytes(privVal)))
 }
 
 func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
@@ -58,7 +64,7 @@ func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
 	ifExit(err)
 
 	pv := new(PrivValidator)
-	binary.ReadJSON(pv, b, &err)
+	wire.ReadJSON(pv, b, &err)
 	ifExit(err)
 
 	keyStore := crypto.NewKeyStorePlain(DefaultKeyStore)
@@ -67,7 +73,7 @@ func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
 		Id:         uuid.NewRandom(),
 		Type:       crypto.KeyType{crypto.CurveTypeEd25519, crypto.AddrTypeRipemd160},
 		Address:    pv.Address,
-		PrivateKey: pv.PrivKey,
+		PrivateKey: pv.PrivKey[:],
 	}
 
 	fmt.Printf("%X\n", key.Address)

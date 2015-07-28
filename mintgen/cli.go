@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 //------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ func cliSingle(cmd *cobra.Command, args []string) {
 			Exit(fmt.Errorf("Please pass a priv_validator.json on stdin or specify a pubkey with --pub"))
 		case privJSON := <-ch:
 			var err error
-			privVal := binary.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
+			privVal := wire.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
 			if err != nil {
 				Exit(fmt.Errorf("Error reading PrivValidator on stdin: %v\n", err))
 			}
@@ -69,7 +69,8 @@ func cliSingle(cmd *cobra.Command, args []string) {
 		if err != nil {
 			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", PubkeyFlag, err))
 		}
-		pubKey = account.PubKeyEd25519(pubKeyBytes)
+		var pubKey account.PubKeyEd25519
+		copy(pubKey[:], pubKeyBytes)
 		addr = pubKey.Address()
 	}
 
@@ -98,7 +99,7 @@ func cliSingle(cmd *cobra.Command, args []string) {
 	}
 
 	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
-	binary.WriteJSON(genDoc, buf, n, err)
+	wire.WriteJSON(genDoc, buf, n, err)
 	IfExit(*err)
 	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
 	genesisBytes := buf2.Bytes()
@@ -133,7 +134,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 	}
 
 	buf, buf2, n := new(bytes.Buffer), new(bytes.Buffer), new(int64)
-	binary.WriteJSON(genDoc, buf, n, &err)
+	wire.WriteJSON(genDoc, buf, n, &err)
 	IfExit(err)
 	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
 	genesisBytes := buf2.Bytes()
@@ -149,7 +150,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 	for i, v := range validators {
 		buf, n = new(bytes.Buffer), new(int64)
-		binary.WriteJSON(v, buf, n, &err)
+		wire.WriteJSON(v, buf, n, &err)
 		IfExit(err)
 		valBytes := buf.Bytes()
 		if len(validators) > 1 {

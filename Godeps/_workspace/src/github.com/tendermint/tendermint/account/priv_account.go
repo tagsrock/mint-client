@@ -2,8 +2,8 @@ package account
 
 import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 type PrivAccount struct {
@@ -49,7 +49,7 @@ func GenPrivAccount() *PrivAccount {
 
 // Generates a new account with private key from SHA256 hash of a secret
 func GenPrivAccountFromSecret(secret []byte) *PrivAccount {
-	privKey32 := binary.BinarySha256(secret) // Not Ripemd160 because we want 32 bytes.
+	privKey32 := wire.BinarySha256(secret) // Not Ripemd160 because we want 32 bytes.
 	privKeyBytes := new([64]byte)
 	copy(privKeyBytes[:32], privKey32)
 	pubKeyBytes := ed25519.MakePublicKey(privKeyBytes)

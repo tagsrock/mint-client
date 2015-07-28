@@ -9,10 +9,10 @@ import (
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 const (
@@ -71,7 +71,7 @@ func LoadPrivValidator(filePath string) *PrivValidator {
 	if err != nil {
 		Exit(err.Error())
 	}
-	privVal := binary.ReadJSON(&PrivValidator{}, privValJSONBytes, &err).(*PrivValidator)
+	privVal := wire.ReadJSON(&PrivValidator{}, privValJSONBytes, &err).(*PrivValidator)
 	if err != nil {
 		Exit(Fmt("Error reading PrivValidator from %v: %v\n", filePath, err))
 	}
@@ -95,7 +95,7 @@ func (privVal *PrivValidator) save() {
 	if privVal.filePath == "" {
 		PanicSanity("Cannot save PrivValidator: filePath not set")
 	}
-	jsonBytes := binary.JSONBytes(privVal)
+	jsonBytes := wire.JSONBytes(privVal)
 	err := WriteFileAtomic(privVal.filePath, jsonBytes)
 	if err != nil {
 		// `@; BOOM!!!

@@ -5,9 +5,9 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 /*
@@ -15,13 +15,13 @@ Immutable AVL Tree (wraps the Node root)
 This tree is not goroutine safe.
 */
 type IAVLTree struct {
-	keyCodec   binary.Codec
-	valueCodec binary.Codec
+	keyCodec   wire.Codec
+	valueCodec wire.Codec
 	root       *IAVLNode
 	ndb        *nodeDB
 }
 
-func NewIAVLTree(keyCodec, valueCodec binary.Codec, cacheSize int, db dbm.DB) *IAVLTree {
+func NewIAVLTree(keyCodec, valueCodec wire.Codec, cacheSize int, db dbm.DB) *IAVLTree {
 	if db == nil {
 		// In-memory IAVLTree
 		return &IAVLTree{

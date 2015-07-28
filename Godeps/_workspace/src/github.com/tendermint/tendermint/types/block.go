@@ -8,9 +8,9 @@ import (
 	"time"
 
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 type Block struct {
@@ -75,7 +75,7 @@ func (b *Block) Hash() []byte {
 }
 
 func (b *Block) MakePartSet() *PartSet {
-	return NewPartSetFromData(binary.BinaryBytes(b))
+	return NewPartSetFromData(wire.BinaryBytes(b))
 }
 
 // Convenience.
@@ -137,7 +137,7 @@ func (h *Header) Hash() []byte {
 		return nil
 	}
 
-	return binary.BinaryRipemd160(h)
+	return wire.BinaryRipemd160(h)
 }
 
 func (h *Header) StringIndented(indent string) string {

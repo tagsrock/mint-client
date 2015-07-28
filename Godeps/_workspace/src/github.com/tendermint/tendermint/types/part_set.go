@@ -9,19 +9,18 @@ import (
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
-const (
+const ( // 4KB
 	partSize = 4096
 )
 
 var (
-	ErrPartSetUnexpectedIndex = // 4KB
-	errors.New("Error part set unexpected index")
-	ErrPartSetInvalidProof = errors.New("Error part set invalid proof")
+	ErrPartSetUnexpectedIndex = errors.New("Error part set unexpected index")
+	ErrPartSetInvalidProof    = errors.New("Error part set invalid proof")
 )
 
 type Part struct {
@@ -77,7 +76,7 @@ func (psh PartSetHeader) Equals(other PartSetHeader) bool {
 }
 
 func (psh PartSetHeader) WriteSignBytes(w io.Writer, n *int64, err *error) {
-	binary.WriteTo([]byte(Fmt(`{"hash":"%X","total":%v}`, psh.Hash, psh.Total)), w, n, err)
+	wire.WriteTo([]byte(Fmt(`{"hash":"%X","total":%v}`, psh.Hash, psh.Total)), w, n, err)
 }
 
 //-------------------------------------

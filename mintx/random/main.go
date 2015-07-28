@@ -37,7 +37,7 @@ func makeKeys() (keys []*account.PrivAccount) {
 		var privKeyBytes [64]byte
 		keyBytes, _ := hex.DecodeString(k)
 		copy(privKeyBytes[:], keyBytes)
-		keys = append(keys, account.GenPrivAccountFromKey(privKeyBytes))
+		keys = append(keys, account.GenPrivAccountFromPrivKeyBytes(&privKeyBytes))
 	}
 	return
 }

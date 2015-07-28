@@ -6,9 +6,8 @@ import (
 	"fmt"
 	//"golang.org/x/crypto/pbkdf2"
 	"crypto/sha256"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto/sha3"
-
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto/sha3"
 )
 
 func Ripemd160(data ...[]byte) []byte {

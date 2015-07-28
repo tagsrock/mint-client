@@ -3,8 +3,8 @@ package account
 import (
 	"fmt"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 // Signature is a part of Txs and consensus Votes.
@@ -18,10 +18,10 @@ const (
 	SignatureTypeEd25519 = byte(0x01)
 )
 
-// for binary.readReflect
-var _ = binary.RegisterInterface(
+// for wire.readReflect
+var _ = wire.RegisterInterface(
 	struct{ Signature }{},
-	binary.ConcreteType{SignatureEd25519{}, SignatureTypeEd25519},
+	wire.ConcreteType{SignatureEd25519{}, SignatureTypeEd25519},
 )
 
 //-------------------------------------

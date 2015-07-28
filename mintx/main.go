@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/log"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/log"
 )
 
 var (

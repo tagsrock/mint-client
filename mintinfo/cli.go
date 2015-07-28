@@ -9,13 +9,13 @@ import (
 	"strconv"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 func prettyPrint(o interface{}) (string, error) {
 	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, binary.JSONBytes(o), "", "\t")
+	err := json.Indent(&prettyJSON, wire.JSONBytes(o), "", "\t")
 	if err != nil {
 		return "", err
 	}
@@ -255,7 +255,7 @@ func cliBroadcast(c *cli.Context) {
 	var tx types.Tx
 	n := new(int64)
 	buf := bytes.NewBuffer(txBytes)
-	binary.ReadBinary(tx, buf, n, &err)
+	wire.ReadBinary(tx, buf, n, &err)
 	ifExit(err)
 	r, err := client.BroadcastTx(tx)
 	ifExit(err)

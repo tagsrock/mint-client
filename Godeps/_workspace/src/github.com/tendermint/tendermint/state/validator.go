@@ -6,9 +6,9 @@ import (
 	"io"
 
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 // Persistent (mostly) static data for each Validator
@@ -29,14 +29,14 @@ func (valInfo *ValidatorInfo) Copy() *ValidatorInfo {
 }
 
 func ValidatorInfoEncoder(o interface{}, w io.Writer, n *int64, err *error) {
-	binary.WriteBinary(o.(*ValidatorInfo), w, n, err)
+	wire.WriteBinary(o.(*ValidatorInfo), w, n, err)
 }
 
 func ValidatorInfoDecoder(r io.Reader, n *int64, err *error) interface{} {
-	return binary.ReadBinary(&ValidatorInfo{}, r, n, err)
+	return wire.ReadBinary(&ValidatorInfo{}, r, n, err)
 }
 
-var ValidatorInfoCodec = binary.Codec{
+var ValidatorInfoCodec = wire.Codec{
 	Encode: ValidatorInfoEncoder,
 	Decode: ValidatorInfoDecoder,
 }
@@ -99,7 +99,7 @@ func (v *Validator) String() string {
 }
 
 func (v *Validator) Hash() []byte {
-	return binary.BinaryRipemd160(v)
+	return wire.BinaryRipemd160(v)
 }
 
 //-------------------------------------
@@ -109,11 +109,11 @@ var ValidatorCodec = validatorCodec{}
 type validatorCodec struct{}
 
 func (vc validatorCodec) Encode(o interface{}, w io.Writer, n *int64, err *error) {
-	binary.WriteBinary(o.(*Validator), w, n, err)
+	wire.WriteBinary(o.(*Validator), w, n, err)
 }
 
 func (vc validatorCodec) Decode(r io.Reader, n *int64, err *error) interface{} {
-	return binary.ReadBinary(&Validator{}, r, n, err)
+	return wire.ReadBinary(&Validator{}, r, n, err)
 }
 
 func (vc validatorCodec) Compare(o1 interface{}, o2 interface{}) int {

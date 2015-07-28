@@ -7,14 +7,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
 	sm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 //------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ func CoreDump() []byte {
 		}
 		accStorage := &AccountStorage{Address: stJ.Accounts[i].Address}
 
-		storage := merkle.NewIAVLTree(binary.BasicCodec, binary.BasicCodec, 1024, stateDB)
+		storage := merkle.NewIAVLTree(wire.BasicCodec, wire.BasicCodec, 1024, stateDB)
 		storage.Load(root)
 		storage.Iterate(func(key interface{}, value interface{}) (stopped bool) {
 			k, v := key.([]byte), value.([]byte)
@@ -76,7 +76,7 @@ func CoreDump() []byte {
 	})
 
 	w, n, err := new(bytes.Buffer), new(int64), new(error)
-	binary.WriteJSON(stJ, w, n, err)
+	wire.WriteJSON(stJ, w, n, err)
 	IfExit(*err)
 	w2 := new(bytes.Buffer)
 	json.Indent(w2, w.Bytes(), "", "\t")
@@ -88,7 +88,7 @@ func CoreDump() []byte {
 func CoreRestore(chainID string, jsonBytes []byte) {
 	var stJ State
 	var err error
-	binary.ReadJSON(&stJ, jsonBytes, &err)
+	wire.ReadJSON(&stJ, jsonBytes, &err)
 	IfExit(err)
 
 	st := new(sm.State)
@@ -101,14 +101,14 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 	stateDB := dbm.GetDB("state")
 
 	// fill the accounts tree
-	accounts := merkle.NewIAVLTree(binary.BasicCodec, acm.AccountCodec, 1000, stateDB)
+	accounts := merkle.NewIAVLTree(wire.BasicCodec, acm.AccountCodec, 1000, stateDB)
 	for _, account := range stJ.Accounts {
 		accounts.Set(account.Address, account.Copy())
 	}
 
 	// fill the storage tree for each contract
 	for _, accStorage := range stJ.AccountsStorage {
-		st := merkle.NewIAVLTree(binary.BasicCodec, binary.BasicCodec, 1024, stateDB)
+		st := merkle.NewIAVLTree(wire.BasicCodec, wire.BasicCodec, 1024, stateDB)
 		for _, accSt := range accStorage.Storage {
 			set := st.Set(accSt.Key, accSt.Value)
 			if !set {
@@ -120,12 +120,12 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 		st.Save()
 	}
 
-	valInfos := merkle.NewIAVLTree(binary.BasicCodec, sm.ValidatorInfoCodec, 0, stateDB)
+	valInfos := merkle.NewIAVLTree(wire.BasicCodec, sm.ValidatorInfoCodec, 0, stateDB)
 	for _, valInfo := range stJ.ValidatorInfos {
 		valInfos.Set(valInfo.Address, valInfo)
 	}
 
-	nameReg := merkle.NewIAVLTree(binary.BasicCodec, sm.NameRegCodec, 0, stateDB)
+	nameReg := merkle.NewIAVLTree(wire.BasicCodec, sm.NameRegCodec, 0, stateDB)
 	for _, entry := range stJ.NameReg {
 		nameReg.Set(entry.Name, entry)
 	}

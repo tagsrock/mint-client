@@ -5,12 +5,11 @@ import (
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519/extra25519"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
-	"golang.org/x/crypto/ripemd160"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common" // PubKey is part of Account and Validator.
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/golang.org/x/crypto/ripemd160"
 )
 
-// PubKey is part of Account and Validator.
 type PubKey interface {
 	Address() []byte
 	VerifyBytes(msg []byte, sig Signature) bool
@@ -21,10 +20,10 @@ const (
 	PubKeyTypeEd25519 = byte(0x01)
 )
 
-// for binary.readReflect
-var _ = binary.RegisterInterface(
+// for wire.readReflect
+var _ = wire.RegisterInterface(
 	struct{ PubKey }{},
-	binary.ConcreteType{PubKeyEd25519{}, PubKeyTypeEd25519},
+	wire.ConcreteType{PubKeyEd25519{}, PubKeyTypeEd25519},
 )
 
 //-------------------------------------
@@ -38,7 +37,7 @@ type PubKeyEd25519 [32]byte
 // compatibility for when the pubkey wasn't fixed length array
 func (pubKey PubKeyEd25519) Address() []byte {
 	w, n, err := new(bytes.Buffer), new(int64), new(error)
-	binary.WriteBinary(pubKey[:], w, n, err)
+	wire.WriteBinary(pubKey[:], w, n, err)
 	if *err != nil {
 		PanicCrisis(*err)
 	}
