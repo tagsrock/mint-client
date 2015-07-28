@@ -256,7 +256,9 @@ func Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, err
 	}
 
 	if unbondAddr == "" {
-		return nil, fmt.Errorf("Unbond address must be given with --unbond-to flag")
+		pkb, _ := hex.DecodeString(pubkey) //err checked in checkCommon()
+		pubKey := account.PubKeyEd25519(pkb)
+		unbondAddr = string(pubKey.Address())
 	}
 
 	unbondAddrBytes, err := hex.DecodeString(unbondAddr)
