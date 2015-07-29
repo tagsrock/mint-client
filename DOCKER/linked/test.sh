@@ -9,7 +9,7 @@ export MINTX_CHAINID=$CHAIN_ID
 # check the chain id
 STATUS=`mintinfo status`
 echo "status $STATUS"
-CHAIN_ID2=`echo $STATUS | jq .chain_id`
+CHAIN_ID2=`echo $STATUS | jq .node_info.chain_id`
 echo "chain id $CHAIN_ID2"
 CHAIN_ID2=$(echo "$CHAIN_ID2" | tr -d '"') # remove surrounding quotes
 echo "chain id $CHAIN_ID2"
@@ -30,6 +30,9 @@ if [ $EXIT -gt 0 ]; then
 fi
 
 sleep 5
+
+STATUS=`mintinfo status`
+echo "status $STATUS"
 
 # verify the name reg entry
 DATA=`mintinfo names $REG_NAME data`

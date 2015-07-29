@@ -10,7 +10,11 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 # grab tendermint
-RUN go get github.com/tendermint/tendermint/cmd/tendermint
+RUN mkdir -p $GOPATH/src/github.com/tendermint/tendermint
+RUN git clone https://github.com/tendermint/tendermint $GOPATH/src/github.com/tendermint/tendermint
+WORKDIR $GOPATH/src/github.com/tendermint/tendermint
+RUN git checkout develop
+RUN go install ./cmd/tendermint
 ENV TMROOT /home/eris/.eris/blockchains/tendermint
 RUN mkdir -p $TMROOT
 ADD $DOCKERFILES/config.toml $TMROOT/config.toml

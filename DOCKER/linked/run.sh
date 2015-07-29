@@ -24,8 +24,9 @@ echo "pub $PUBKEY"
 # get the TMROOT and set the chain id
 TMROOT=`docker run --rm --volumes-from mct_tendermint-data -t mct_tendermint bash -c "mkdir -p \\$TMROOT; echo \\$TMROOT"`
 TMROOT=${TMROOT%?}
-echo $TMROOT
+echo "tmroot $TMROOT"
 CHAIN_ID=mintclient_test
+echo "chain_id $CHAIN_ID"
 
 # XXX: we need to get the privkey out as priv_validator.json so we can copy into tendermint container
 # This step can be eliminated once tendermint can use eris-keys for signing
@@ -38,8 +39,12 @@ rm priv_validator.json
 #------------------------------------------------------------------
 # generate the genesis.json
 
+echo "******** GENERATE GENESIS.JSON ************"
+
 # run mintgen in mint-client with volumes from tendermint-data and using the pubkey
 docker run --rm --volumes-from mct_tendermint-data -t mct_client bash -c "mintgen single --pub=$PUBKEY $CHAIN_ID > $TMROOT/genesis.json"
+GENESIS=`docker run --rm --volumes-from mct_tendermint-data -t mct_client bash -c "cat $TMROOT/genesis.json"`
+echo "genesis $GENESIS"
 
 # copy in the config.toml
 cat config.toml | docker run --rm --volumes-from mct_tendermint-data -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
@@ -68,4 +73,4 @@ docker run --name mct_client_test --rm --link mct_keys:keys --link mct_tendermin
 
 echo "-----------"
 echo "cleaning up ..."
-docker rm -f mct_keys mct_tendermint mct_keys-data mct_tendermint-data 
+docker rm -vf mct_keys mct_tendermint mct_keys-data mct_tendermint-data 

@@ -6,5 +6,5 @@ node_laddr = "0.0.0.0:46656"
 seeds = ""
 fast_sync = false
 db_backend = "leveldb"
-log_level = "error"
+log_level = "debug"
 rpc_laddr = "0.0.0.0:46657"

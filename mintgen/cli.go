@@ -69,7 +69,6 @@ func cliSingle(cmd *cobra.Command, args []string) {
 		if err != nil {
 			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", PubkeyFlag, err))
 		}
-		var pubKey account.PubKeyEd25519
 		copy(pubKey[:], pubKeyBytes)
 		addr = pubKey.Address()
 	}
