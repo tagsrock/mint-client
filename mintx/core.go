@@ -554,7 +554,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 	}()
 
 	// txs should take no more than 10 seconds
-	timeoutTicker := time.Tick(20 * time.Second)
+	timeoutTicker := time.Tick(10 * time.Second)
 
 	go func() {
 		<-timeoutTicker

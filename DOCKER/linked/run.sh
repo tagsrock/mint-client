@@ -63,7 +63,7 @@ sleep 3
 #------------------------------------------------------------------
 # run test
 
-echo "******** RUNNING TEST ************"
+echo "******** INITIALIZING TESTS ************"
 
 # run the test commands in mint-client container linked to eris-keys and tendermint
 docker run --name mct_client_test --rm --link mct_keys:keys --link mct_tendermint:tendermint -e "CHAIN_ID=$CHAIN_ID" -e "MINTX_PUBKEY=$PUBKEY" -t mct_client
