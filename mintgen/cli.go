@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -177,11 +178,23 @@ func cliMulti(cmd *cobra.Command, args []string) {
 	chainID := args[0]
 
 	//TODO convert to addrs
-	if PubkeyFlag == "" {
-		Exit(fmt.Errorf("Enter one or more pub keys"))
+	//TODO better logic -> refactor; set defaults, or add them as flags??
+	if PubkeyFlag == "" && CsvPathFlag == "" {
+		Exit(fmt.Errorf("Enter one or more pub keys or path to .csv"))
 	}
 
-	pubkeys := strings.Split(PubkeyFlag, " ")
+	var pubkeys []string
+	var amts []string
+	var names []string
+	//	var perms []string
+
+	if CsvPathFlag != "" {
+		//TODO figure out perms
+		pubkeys, amts, names, _ = parseCsv(CsvPathFlag)
+
+	} else {
+		pubkeys = strings.Split(PubkeyFlag, " ")
+	}
 
 	pubKeyBytes := make([][]byte, len(pubkeys))
 	for i, k := range pubkeys {
@@ -192,7 +205,14 @@ func cliMulti(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	amt := int64(1) << 50
+	amt := make([]int64, len(amts))
+	for i, a := range amts {
+		var err error
+		amt[i], err = strconv.ParseInt(a, 10, 64)
+		if err != nil {
+			Exit(fmt.Errorf("Invalid amount: %v", err))
+		}
+	}
 
 	genDoc := state.GenesisDoc{
 		ChainID: chainID,
@@ -202,6 +222,7 @@ func cliMulti(cmd *cobra.Command, args []string) {
 	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
 
 	var pubKey account.PubKeyEd25519
+	unbAmt := int64(1) << 50
 
 	for i, kb := range pubKeyBytes {
 		copy(pubKey[:], kb)
@@ -209,15 +230,16 @@ func cliMulti(cmd *cobra.Command, args []string) {
 
 		genDoc.Accounts[i] = state.GenesisAccount{
 			Address: addr,
-			Amount:  amt,
+			Amount:  amt[i],
+			Name:    names[i],
 		}
 		genDoc.Validators[i] = state.GenesisValidator{
 			PubKey: pubKey,
-			Amount: amt,
+			Amount: amt[i],
 			UnbondTo: []state.BasicAccount{
 				state.BasicAccount{
 					Address: addr,
-					Amount:  amt,
+					Amount:  unbAmt,
 				},
 			},
 		}
@@ -239,4 +261,36 @@ func cliMulti(cmd *cobra.Command, args []string) {
 
 	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 	fmt.Printf("genesis.json saved in %s\n", DirFlag)
+}
+
+//takes a csv in the format defined [here]
+func parseCsv(path string) (pubkeys, amts, names, perms []string) {
+
+	csvFile, err := os.Open(path)
+	if err != nil {
+		Exit(fmt.Errorf("Couldn't open file: %s: %v", path, err))
+	}
+
+	defer csvFile.Close()
+
+	r := csv.NewReader(csvFile)
+	//r.FieldsPerRecord = # of records expected
+	params, err := r.ReadAll()
+	if err != nil {
+		Exit(fmt.Errorf("Couldn't read file: %v", err))
+
+	}
+
+	pubkeys = make([]string, len(params))
+	amts = make([]string, len(params))
+	names = make([]string, len(params))
+	perms = make([]string, len(params))
+	for i, each := range params {
+		pubkeys[i] = each[0]
+		amts[i] = each[1]
+		names[i] = each[2]
+		perms[i] = each[3]
+
+	}
+	return pubkeys, amts, names, perms
 }

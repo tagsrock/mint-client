@@ -5,9 +5,11 @@ import (
 )
 
 var (
-	DirFlag    string
-	PubkeyFlag string
+	DirFlag     string
+	PubkeyFlag  string
+	CsvPathFlag string
 	//AddrsFlag  string
+
 )
 
 func main() {
@@ -30,12 +32,13 @@ func main() {
 	//XXX uses pubkey until I figure out how to do conversion
 	var multiCmd = &cobra.Command{
 		Use:   "multi",
-		Short: "mintgen multi <chain_id> --pub <pub_1> <pub_2> <pub_N>",
-		Long:  "Create a genesis.json with <chain_id> and N <pub>'s passed in, seperated by a space; --pub is req'd",
+		Short: "mintgen multi <chain_id> [flags] ",
+		Long:  "Create a genesis.json with --pub <pub_1> <pub_2> <pub_N> or --csv <path_to_file>. either flag is req'd",
 		Run:   cliMulti,
 	}
 	multiCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
 	multiCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
+	multiCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv that looks like: (pubkeys, addrs?, starting bal, perms)")
 
 	var rootCmd = &cobra.Command{
 		Use:   "mintgen",
