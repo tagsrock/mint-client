@@ -192,18 +192,19 @@ func cliMulti(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	addrs := make([][]byte, len(pubkeys))
 	amt := int64(1) << 50
 
 	genDoc := state.GenesisDoc{
 		ChainID: chainID,
 	}
 
-	genDoc.Accounts = make([]state.GenesisAccount, len(addrs))
-	genDoc.Validators = make([]state.GenesisValidator, len(addrs))
+	genDoc.Accounts = make([]state.GenesisAccount, len(pubkeys))
+	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
+
+	var pubKey account.PubKeyEd25519
 
 	for i, kb := range pubKeyBytes {
-		pubKey := account.PubKeyEd25519(kb)
+		copy(pubKey[:], kb)
 		addr := pubKey.Address()
 
 		genDoc.Accounts[i] = state.GenesisAccount{
@@ -223,7 +224,7 @@ func cliMulti(cmd *cobra.Command, args []string) {
 	}
 
 	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
-	binary.WriteJSON(genDoc, buf, n, err)
+	wire.WriteJSON(genDoc, buf, n, err)
 	IfExit(*err)
 	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
 	genesisBytes := buf2.Bytes()

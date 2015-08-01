@@ -254,10 +254,10 @@ func Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, err
 	if err != nil {
 		return nil, err
 	}
-
+	var pubKey account.PubKeyEd25519
 	if unbondAddr == "" {
 		pkb, _ := hex.DecodeString(pubkey) //err checked in checkCommon()
-		pubKey := account.PubKeyEd25519(pkb)
+		copy(pubKey[:], pkb)
 		unbondAddr = string(pubKey.Address())
 	}
 
