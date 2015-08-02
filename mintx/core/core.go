@@ -255,15 +255,18 @@ func Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, err
 		return nil, err
 	}
 	var pubKey account.PubKeyEd25519
-	if unbondAddr == "" {
-		pkb, _ := hex.DecodeString(pubkey) //err checked in checkCommon()
-		copy(pubKey[:], pkb)
-		unbondAddr = string(pubKey.Address())
-	}
+	var unbondAddrBytes []byte
 
-	unbondAddrBytes, err := hex.DecodeString(unbondAddr)
-	if err != nil {
-		return nil, fmt.Errorf("unbondAddr is bad hex: %v", err)
+	if unbondAddr == "" {
+		pkb, _ := hex.DecodeString(pubkey)
+		copy(pubKey[:], pkb)
+		unbondAddrBytes = pubKey.Address()
+	} else {
+		unbondAddrBytes, err = hex.DecodeString(unbondAddr)
+		if err != nil {
+			return nil, fmt.Errorf("unbondAddr is bad hex: %v", err)
+		}
+
 	}
 
 	tx, err := types.NewBondTx(pub)
