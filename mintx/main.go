@@ -349,7 +349,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "mintx"
 	app.Usage = "Create and broadcast tendermint txs"
-	app.Version = "0.0.1"
+	app.Version = "0.0.2" // move core funcs to own lib
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
 	app.Before = before
@@ -391,12 +391,4 @@ func after(c *cli.Context) error {
 func exit(err error) {
 	fmt.Println(err)
 	os.Exit(1)
-}
-
-func ifExit(err error) {
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 }

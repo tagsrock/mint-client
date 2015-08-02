@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/gorilla/websocket"
+
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
@@ -27,7 +27,7 @@ import (
 // core functions with string args.
 // validates strings and forms transaction
 
-func coreOutput(addr, amtS string) ([]byte, error) {
+func Output(addr, amtS string) ([]byte, error) {
 	if amtS == "" {
 		return nil, fmt.Errorf("output must specify an amount with the --amt flag")
 	}
@@ -61,7 +61,7 @@ func coreOutput(addr, amtS string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func coreInput(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
+func Input(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
 	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func coreInput(nodeAddr, pubkey, amtS, nonceS, addr string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx, error) {
+func Send(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendTx, error) {
 	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS string) (*types.SendT
 	return tx, nil
 }
 
-func coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data string) (*types.CallTx, error) {
+func Call(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data string) (*types.CallTx, error) {
 	pub, _, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data str
 	return tx, nil
 }
 
-func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*types.NameTx, error) {
+func Name(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*types.NameTx, error) {
 	pub, _, amt, nonce, err := checkCommon(nodeAddr, pubkey, addr, amtS, nonceS)
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data string) (*t
 	return tx, nil
 }
 
-func corePermissions(nodeAddr, pubkey, addrS, nonceS, permFunc string, argsS []string) (*types.PermissionsTx, error) {
+func Permissions(nodeAddr, pubkey, addrS, nonceS, permFunc string, argsS []string) (*types.PermissionsTx, error) {
 	pub, _, _, nonce, err := checkCommon(nodeAddr, pubkey, addrS, "0", "0")
 	if err != nil {
 		return nil, err
@@ -249,7 +249,7 @@ func coreNewAccount(nodeAddr, pubkey, chainID string) (*types.NewAccountTx, erro
 }
 */
 
-func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, error) {
+func Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx, error) {
 	pub, addrBytes, amt, nonce, err := checkCommon(nodeAddr, pubkey, "", amtS, nonceS)
 	if err != nil {
 		return nil, err
@@ -275,7 +275,7 @@ func coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS string) (*types.BondTx,
 	return tx, nil
 }
 
-func coreUnbond(addrS, heightS string) (*types.UnbondTx, error) {
+func Unbond(addrS, heightS string) (*types.UnbondTx, error) {
 	if addrS == "" {
 		return nil, fmt.Errorf("Validator address must be given with --addr flag")
 	}
@@ -296,7 +296,7 @@ func coreUnbond(addrS, heightS string) (*types.UnbondTx, error) {
 	}, nil
 }
 
-func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
+func Rebond(addrS, heightS string) (*types.RebondTx, error) {
 	if addrS == "" {
 		return nil, fmt.Errorf("Validator address must be given with --addr flag")
 	}
@@ -320,7 +320,7 @@ func coreRebond(addrS, heightS string) (*types.RebondTx, error) {
 //------------------------------------------------------------------------------------
 // sign and broadcast
 
-func coreSign(signBytes, signAddr, signRPC string) (sig [64]byte, err error) {
+func Sign(signBytes, signAddr, signRPC string) (sig [64]byte, err error) {
 	args := map[string]string{
 		"hash": signBytes,
 		"addr": signAddr,
@@ -350,7 +350,7 @@ func coreSign(signBytes, signAddr, signRPC string) (sig [64]byte, err error) {
 	return
 }
 
-func coreBroadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
+func Broadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
 	client := cclient.NewClient(broadcastRPC, "JSONRPC")
 	rec, err := client.BroadcastTx(tx)
 	if err != nil {
@@ -396,8 +396,7 @@ func unpackResponse(resp *http.Response) (string, string, error) {
 
 // tx has either one input or we default to the first one (ie for send/bond)
 // TODO: better support for multisig..
-func signTx(c *cli.Context, chainID string, tx_ types.Tx) ([]byte, types.Tx) {
-	signAddr := c.String("sign-addr")
+func signTx(signAddr, chainID string, tx_ types.Tx) ([]byte, types.Tx, error) {
 	signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx_))
 	var inputAddr []byte
 	var sigED account.SignatureEd25519
@@ -425,41 +424,67 @@ func signTx(c *cli.Context, chainID string, tx_ types.Tx) ([]byte, types.Tx) {
 		defer func(s *account.SignatureEd25519) { tx.Signature = *s }(&sigED)
 	}
 	addrHex := fmt.Sprintf("%X", inputAddr)
-	sig, err := coreSign(signBytes, addrHex, signAddr)
-	ifExit(err)
+	sig, err := Sign(signBytes, addrHex, signAddr)
+	if err != nil {
+		return nil, nil, err
+	}
 	sigED = account.SignatureEd25519(sig)
-	logger.Debugf("%X\n", sig)
-	return inputAddr, tx_
+	logger.Debugf("SIG: %X\n", sig)
+	return inputAddr, tx_, nil
 }
 
-func signAndBroadcast(c *cli.Context, chainID, nodeAddr string, tx types.Tx) {
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
+type TxResult struct {
+	Hash      []byte // all txs get a hash
+	Return    []byte // only CallTx has a return value
+	Exception string // only CallTx
+
+	//TODO: make Broadcast() errors more responsive so we
+	// can differentiate mempool errors from other
+}
+
+func SignAndBroadcast(chainID, nodeAddr, signAddr string, tx types.Tx, sign, broadcast, wait bool) (txResult *TxResult, err error) {
 	var inputAddr []byte
 	if sign {
-		inputAddr, tx = signTx(c, chainID, tx)
-	}
-	if wait {
-		ch, err := subscribeAndWait(tx, chainID, nodeAddr, inputAddr)
+		inputAddr, tx, err = signTx(signAddr, chainID, tx)
 		if err != nil {
-			logger.Errorln(err)
-		} else {
-			defer func() {
-				logger.Debugln("Waiting for tx to be committed ...")
-				msg := <-ch
-				if msg.Error != nil {
-					fmt.Printf("Encountered error waiting for event: %v\n", msg.Error)
-				} else {
-					fmt.Printf("Return Value: %X\n", msg.Value)
-					fmt.Printf("Exception: %s\n", msg.Exception)
-				}
-			}()
+			return nil, err
 		}
 	}
+
 	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
+		if wait {
+			var ch chan Msg
+			ch, err = subscribeAndWait(tx, chainID, nodeAddr, inputAddr)
+			if err != nil {
+				return nil, err
+			} else {
+				defer func() {
+					if err != nil {
+						// if broadcast threw an error, just return
+						return
+					}
+					logger.Debugln("Waiting for tx to be committed ...")
+					msg := <-ch
+					if msg.Error != nil {
+						logger.Infof("Encountered error waiting for event: %v\n", msg.Error)
+						err = msg.Error
+					} else {
+						txResult.Return = msg.Value
+						txResult.Exception = msg.Exception
+					}
+				}()
+			}
+		}
+		var receipt *rtypes.Receipt
+		receipt, err = Broadcast(tx, nodeAddr)
+		if err != nil {
+			return nil, err
+		}
+		txResult = &TxResult{
+			Hash: receipt.TxHash,
+		}
 	}
+	return
 }
 
 //------------------------------------------------------------------------------------
@@ -475,7 +500,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 	// subscribe to event and wait for tx to be committed
 	wsAddr := strings.TrimPrefix(nodeAddr, "http://")
 	wsAddr = "ws://" + wsAddr + "websocket"
-	fmt.Println(wsAddr)
+	logger.Debugln(wsAddr)
 	dialer := websocket.DefaultDialer
 	rHeader := http.Header{}
 	conn, _, err := dialer.Dial(wsAddr, rHeader)
