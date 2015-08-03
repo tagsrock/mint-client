@@ -147,9 +147,6 @@ func cliRandom(cmd *cobra.Command, args []string) {
 	if _, err := os.Stat(DirFlag); err != nil {
 		IfExit(os.MkdirAll(DirFlag, 0700))
 	}
-	// XXX: we're gonna write to it even if it already exists
-	IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(defaultConfig), 0644))
-	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 
 	for i, v := range validators {
 		buf, n = new(bytes.Buffer), new(int64)
@@ -164,9 +161,11 @@ func cliRandom(cmd *cobra.Command, args []string) {
 			IfExit(ioutil.WriteFile(path.Join(mulDir, "genesis.json"), genesisBytes, 0644))
 		} else {
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
+			IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(defaultConfig), 0644))
+			IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 		}
 	}
-	fmt.Printf("config.toml, genesis.json and priv_validator_X.json files saved in %s\n", DirFlag)
+	fmt.Printf("config.toml, genesis.json and priv_validator.json files saved in %s\n", DirFlag)
 }
 
 func cliMulti(cmd *cobra.Command, args []string) {
@@ -185,13 +184,24 @@ func cliMulti(cmd *cobra.Command, args []string) {
 	var amts []string
 	var names []string
 	//	var perms []string
-
+	amt := []int64{}
 	if CsvPathFlag != "" {
 		//TODO figure out perms
 		pubkeys, amts, names, _ = parseCsv(CsvPathFlag)
 
+		amt = make([]int64, len(amts))
+		for i, a := range amts {
+			var err error
+			amt[i], err = strconv.ParseInt(a, 10, 64)
+			if err != nil {
+				Exit(fmt.Errorf("Invalid amount: %v", err))
+			}
+		}
 	} else {
 		pubkeys = strings.Split(PubkeyFlag, " ")
+		//	amt = int64(1) << 50
+		amt = []int64{int64(1) << 50}
+		names = []string{""}
 	}
 
 	pubKeyBytes := make([][]byte, len(pubkeys))
@@ -202,44 +212,38 @@ func cliMulti(cmd *cobra.Command, args []string) {
 			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
 		}
 	}
-
-	amt := make([]int64, len(amts))
-	for i, a := range amts {
-		var err error
-		amt[i], err = strconv.ParseInt(a, 10, 64)
-		if err != nil {
-			Exit(fmt.Errorf("Invalid amount: %v", err))
-		}
-	}
-
 	genDoc := state.GenesisDoc{
 		ChainID: chainID,
 	}
-
 	genDoc.Accounts = make([]state.GenesisAccount, len(pubkeys))
 	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
 
 	var pubKey account.PubKeyEd25519
 	unbAmt := int64(1) << 50
 
-	for i, kb := range pubKeyBytes {
+	i := 0
+	for s, kb := range pubKeyBytes {
 		copy(pubKey[:], kb)
 		addr := pubKey.Address()
 
-		genDoc.Accounts[i] = state.GenesisAccount{
+		genDoc.Accounts[s] = state.GenesisAccount{
 			Address: addr,
 			Amount:  amt[i],
 			Name:    names[i],
 		}
-		genDoc.Validators[i] = state.GenesisValidator{
+		genDoc.Validators[s] = state.GenesisValidator{
 			PubKey: pubKey,
 			Amount: amt[i],
+			Name:   names[i],
 			UnbondTo: []state.BasicAccount{
 				state.BasicAccount{
 					Address: addr,
 					Amount:  unbAmt,
 				},
 			},
+		}
+		if CsvPathFlag != "" {
+			i++
 		}
 	}
 
