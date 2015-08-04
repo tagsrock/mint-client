@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
@@ -13,6 +15,17 @@ var (
 )
 
 func main() {
+
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "check mintgen version",
+		Run: func(cmd *cobra.Command, args []string) {
+			// major: alpha
+			// minor: csvs, known
+			// revision:
+			fmt.Println("0.2.0")
+		},
+	}
 
 	var randomCmd = &cobra.Command{
 		Use:   "random",
@@ -41,6 +54,6 @@ func main() {
 		Short: "a tool for generating tendermint genesis files",
 		Long:  "a tool for generating tendermint genesis files",
 	}
-	rootCmd.AddCommand(randomCmd, knownCmd)
+	rootCmd.AddCommand(randomCmd, knownCmd, versionCmd)
 	rootCmd.Execute()
 }

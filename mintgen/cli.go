@@ -21,27 +21,7 @@ import (
 )
 
 //------------------------------------------------------------------------------
-
-func setDefaultConfig(num int, mon, seeds string) []byte {
-	//build moniker
-	moniker := fmt.Sprintf("%s_%d", mon, num)
-	var defaultConfig = fmt.Sprintf(`
-# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
-
-moniker = "%s"
-node_laddr = "0.0.0.0:46656"
-seeds = "%s"
-fast_sync = false
-db_backend = "leveldb"
-log_level = "debug"
-rpc_laddr = "0.0.0.0:46657"
-`, moniker, seeds)
-
-	return []byte(defaultConfig)
-}
-
-const stdinTimeoutSeconds = 1
+// mintgen cli
 
 func cliKnown(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
@@ -49,105 +29,47 @@ func cliKnown(cmd *cobra.Command, args []string) {
 	}
 	chainID := args[0]
 
-	var pubKey account.PubKeyEd25519
-	var pubkeys []string
-	var amts []string
-	var names []string
-	//	var perms []string
-	amt := []int64{}
-
+	var genDoc *state.GenesisDoc
+	var err error
 	if CsvPathFlag != "" {
 		//TODO figure out perms
-		pubkeys, amts, names, _ = parseCsv(CsvPathFlag)
+		pubkeys, amts, names, _ := parseCsv(CsvPathFlag)
 
-		amt = make([]int64, len(amts))
+		// convert amts to ints
+		amt := make([]int64, len(amts))
 		for i, a := range amts {
-			var err error
 			amt[i], err = strconv.ParseInt(a, 10, 64)
 			if err != nil {
 				Exit(fmt.Errorf("Invalid amount: %v", err))
 			}
 		}
-	} else if PubkeyFlag != "" {
 
-		pubkeys = strings.Split(PubkeyFlag, " ")
-		amt = []int64{int64(1) << 50}
-		names = []string{""}
+		// convert pubkey hex strings to struct
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
+		for i, pk := range pubKeys {
+			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], i)
+		}
+
+	} else if PubkeyFlag != "" {
+		pubkeys := strings.Split(PubkeyFlag, " ")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
+		for i, pk := range pubKeys {
+			genDocAddAccountAndValidator(genDoc, pk, amt, "", i)
+		}
 
 	} else {
-
-		ch := make(chan []byte, 1)
-		go func() {
-			privJSON, err := ioutil.ReadAll(os.Stdin)
-			IfExit(err)
-			ch <- privJSON
-		}()
-		ticker := time.Tick(time.Second * stdinTimeoutSeconds)
-		select {
-		case <-ticker:
-			Exit(fmt.Errorf("Please pass a priv_validator.json on stdin, or specify either a pubkey with --pub or csv file with --csv"))
-		case privJSON := <-ch:
-			var err error
-			privVal := wire.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
-			if err != nil {
-				Exit(fmt.Errorf("Error reading PrivValidator on stdin: %v\n", err))
-			}
-			pubKey = privVal.PubKey
-			pubkeys = []string{""}
-			amt = []int64{int64(1) << 50}
-			names = []string{""}
-		}
+		privJSON := readStdinTimeout()
+		genDoc = genesisFromPrivValBytes(chainID, privJSON)
 	}
 
-	pubKeyBytes := make([][]byte, len(pubkeys))
-	if PubkeyFlag != "" || CsvPathFlag != "" {
-		for i, k := range pubkeys {
-			var err error
-			pubKeyBytes[i], err = hex.DecodeString(k)
-			if err != nil {
-				Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
-			}
-		}
-	}
-	genDoc := state.GenesisDoc{
-		ChainID: chainID,
-	}
-	genDoc.Accounts = make([]state.GenesisAccount, len(pubkeys))
-	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
-
-	unbAmt := int64(1) << 50
-
-	i := 0
-	for s, kb := range pubKeyBytes {
-		if PubkeyFlag != "" || CsvPathFlag != "" {
-			copy(pubKey[:], kb)
-		}
-		addr := pubKey.Address()
-
-		genDoc.Accounts[s] = state.GenesisAccount{
-			Address: addr,
-			Amount:  amt[i],
-			Name:    names[i],
-		}
-		genDoc.Validators[s] = state.GenesisValidator{
-			PubKey: pubKey,
-			Amount: amt[i],
-			Name:   names[i],
-			UnbondTo: []state.BasicAccount{
-				state.BasicAccount{
-					Address: addr,
-					Amount:  unbAmt,
-				},
-			},
-		}
-		if CsvPathFlag != "" {
-			i++
-		}
-	}
-
-	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
-	wire.WriteJSON(genDoc, buf, n, err)
-	IfExit(*err)
+	buf, buf2, n := new(bytes.Buffer), new(bytes.Buffer), new(int64)
+	wire.WriteJSON(genDoc, buf, n, &err)
+	IfExit(err)
 	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
 	genesisBytes := buf2.Bytes()
 
@@ -224,6 +146,90 @@ func cliRandom(cmd *cobra.Command, args []string) {
 	fmt.Printf("config.toml, genesis.json and priv_validator.json files saved in %s\n", DirFlag)
 }
 
+//-----------------------------------------------------------------------------
+// gendoc convenience functions
+
+func newGenDoc(chainID string, nVal, nAcc int) *state.GenesisDoc {
+	genDoc := state.GenesisDoc{
+		ChainID: chainID,
+	}
+	genDoc.Accounts = make([]state.GenesisAccount, nAcc)
+	genDoc.Validators = make([]state.GenesisValidator, nVal)
+	return &genDoc
+}
+
+// genesis file with only one validator, using priv_validator.json
+func genesisFromPrivValBytes(chainID string, privJSON []byte) *state.GenesisDoc {
+	var err error
+	privVal := wire.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
+	if err != nil {
+		Exit(fmt.Errorf("Error reading PrivValidator on stdin: %v\n", err))
+	}
+	pubKey := privVal.PubKey
+	amt := int64(1) << 50
+
+	genDoc := newGenDoc(chainID, 1, 1)
+
+	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0)
+
+	return genDoc
+}
+
+func genDocAddAccountAndValidator(genDoc *state.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, index int) {
+	addr := pubKey.Address()
+	genDoc.Accounts[index] = state.GenesisAccount{
+		Address: addr,
+		Amount:  amt,
+		Name:    name,
+	}
+	genDoc.Validators[index] = state.GenesisValidator{
+		PubKey: pubKey,
+		Amount: amt,
+		Name:   name,
+		UnbondTo: []state.BasicAccount{
+			state.BasicAccount{
+				Address: addr,
+				Amount:  amt,
+			},
+		},
+	}
+}
+
+//-----------------------------------------------------------------------------
+// util functions
+
+func setDefaultConfig(num int, mon, seeds string) []byte {
+	//build moniker
+	moniker := fmt.Sprintf("%s_%d", mon, num)
+	var defaultConfig = fmt.Sprintf(`
+# This is a TOML config file.
+# For more information, see https://github.com/toml-lang/toml
+
+moniker = "%s"
+node_laddr = "0.0.0.0:46656"
+seeds = "%s"
+fast_sync = false
+db_backend = "leveldb"
+log_level = "debug"
+rpc_laddr = "0.0.0.0:46657"
+`, moniker, seeds)
+
+	return []byte(defaultConfig)
+}
+
+// convert hex strings to ed25519 pubkeys
+func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
+	pubKeys := make([]account.PubKeyEd25519, len(pubkeys))
+	for i, k := range pubkeys {
+		pubBytes, err := hex.DecodeString(k)
+		if err != nil {
+			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
+		}
+		copy(pubKeys[i][:], pubBytes)
+	}
+	return pubKeys
+}
+
 //takes a csv in the format defined [here]
 func parseCsv(path string) (pubkeys, amts, names, perms []string) {
 
@@ -254,4 +260,24 @@ func parseCsv(path string) (pubkeys, amts, names, perms []string) {
 
 	}
 	return pubkeys, amts, names, perms
+}
+
+const stdinTimeoutSeconds = 1
+
+// read the priv validator json off stdin or timeout and fail
+func readStdinTimeout() []byte {
+	ch := make(chan []byte, 1)
+	go func() {
+		privJSON, err := ioutil.ReadAll(os.Stdin)
+		IfExit(err)
+		ch <- privJSON
+	}()
+	ticker := time.Tick(time.Second * stdinTimeoutSeconds)
+	select {
+	case <-ticker:
+		Exit(fmt.Errorf("Please pass a priv_validator.json on stdin, or specify either a pubkey with --pub or csv file with --csv"))
+	case privJSON := <-ch:
+		return privJSON
+	}
+	return nil
 }
