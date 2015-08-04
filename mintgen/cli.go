@@ -22,31 +22,60 @@ import (
 
 //------------------------------------------------------------------------------
 
-var defaultConfig = `# This is a TOML config file.
+func setDefaultConfig(num int, mon, seeds string) []byte {
+	//build moniker
+	moniker := fmt.Sprintf("%s_%d", mon, num)
+	var defaultConfig = fmt.Sprintf(`
+# This is a TOML config file.
 # For more information, see https://github.com/toml-lang/toml
 
-moniker = "__MONIKER__"
+moniker = "%s"
 node_laddr = "0.0.0.0:46656"
-seeds = ""
+seeds = "%s"
 fast_sync = false
 db_backend = "leveldb"
 log_level = "debug"
 rpc_laddr = "0.0.0.0:46657"
-`
+`, moniker, seeds)
+
+	return []byte(defaultConfig)
+}
 
 const stdinTimeoutSeconds = 1
 
-func cliSingle(cmd *cobra.Command, args []string) {
+func cliKnown(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		Exit(fmt.Errorf("Enter a chain_id"))
 	}
-
 	chainID := args[0]
 
 	var pubKey account.PubKeyEd25519
-	var addr []byte
-	if PubkeyFlag == "" {
-		// block reading on stdin, wait 1 second
+	var pubkeys []string
+	var amts []string
+	var names []string
+	//	var perms []string
+	amt := []int64{}
+
+	if CsvPathFlag != "" {
+		//TODO figure out perms
+		pubkeys, amts, names, _ = parseCsv(CsvPathFlag)
+
+		amt = make([]int64, len(amts))
+		for i, a := range amts {
+			var err error
+			amt[i], err = strconv.ParseInt(a, 10, 64)
+			if err != nil {
+				Exit(fmt.Errorf("Invalid amount: %v", err))
+			}
+		}
+	} else if PubkeyFlag != "" {
+
+		pubkeys = strings.Split(PubkeyFlag, " ")
+		amt = []int64{int64(1) << 50}
+		names = []string{""}
+
+	} else {
+
 		ch := make(chan []byte, 1)
 		go func() {
 			privJSON, err := ioutil.ReadAll(os.Stdin)
@@ -56,7 +85,7 @@ func cliSingle(cmd *cobra.Command, args []string) {
 		ticker := time.Tick(time.Second * stdinTimeoutSeconds)
 		select {
 		case <-ticker:
-			Exit(fmt.Errorf("Please pass a priv_validator.json on stdin or specify a pubkey with --pub"))
+			Exit(fmt.Errorf("Please pass a priv_validator.json on stdin, or specify either a pubkey with --pub or csv file with --csv"))
 		case privJSON := <-ch:
 			var err error
 			privVal := wire.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
@@ -64,39 +93,56 @@ func cliSingle(cmd *cobra.Command, args []string) {
 				Exit(fmt.Errorf("Error reading PrivValidator on stdin: %v\n", err))
 			}
 			pubKey = privVal.PubKey
-			addr = privVal.Address
+			pubkeys = []string{""}
+			amt = []int64{int64(1) << 50}
+			names = []string{""}
 		}
-	} else {
-		pubKeyBytes, err := hex.DecodeString(PubkeyFlag)
-		if err != nil {
-			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", PubkeyFlag, err))
-		}
-		copy(pubKey[:], pubKeyBytes)
-		addr = pubKey.Address()
 	}
 
-	amt := int64(1) << 60
-	//  build gendoc
+	pubKeyBytes := make([][]byte, len(pubkeys))
+	if PubkeyFlag != "" || CsvPathFlag != "" {
+		for i, k := range pubkeys {
+			var err error
+			pubKeyBytes[i], err = hex.DecodeString(k)
+			if err != nil {
+				Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
+			}
+		}
+	}
 	genDoc := state.GenesisDoc{
 		ChainID: chainID,
-		Accounts: []state.GenesisAccount{
-			state.GenesisAccount{
-				Address: addr,
-				Amount:  amt,
-			},
-		},
-		Validators: []state.GenesisValidator{
-			state.GenesisValidator{
-				PubKey: pubKey,
-				Amount: amt,
-				UnbondTo: []state.BasicAccount{
-					state.BasicAccount{
-						Address: addr,
-						Amount:  amt,
-					},
+	}
+	genDoc.Accounts = make([]state.GenesisAccount, len(pubkeys))
+	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
+
+	unbAmt := int64(1) << 50
+
+	i := 0
+	for s, kb := range pubKeyBytes {
+		if PubkeyFlag != "" || CsvPathFlag != "" {
+			copy(pubKey[:], kb)
+		}
+		addr := pubKey.Address()
+
+		genDoc.Accounts[s] = state.GenesisAccount{
+			Address: addr,
+			Amount:  amt[i],
+			Name:    names[i],
+		}
+		genDoc.Validators[s] = state.GenesisValidator{
+			PubKey: pubKey,
+			Amount: amt[i],
+			Name:   names[i],
+			UnbondTo: []state.BasicAccount{
+				state.BasicAccount{
+					Address: addr,
+					Amount:  unbAmt,
 				},
 			},
-		},
+		}
+		if CsvPathFlag != "" {
+			i++
+		}
 	}
 
 	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
@@ -106,12 +152,22 @@ func cliSingle(cmd *cobra.Command, args []string) {
 	genesisBytes := buf2.Bytes()
 
 	fmt.Println(string(genesisBytes))
+	if DirFlag == "" {
+		DirFlag = path.Join(DataContainersPath, chainID)
+	}
+	if _, err := os.Stat(DirFlag); err != nil {
+		IfExit(os.MkdirAll(DirFlag, 0700))
+	}
+
+	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
+	fmt.Printf("genesis.json saved in %s\n", DirFlag)
 }
 
 func cliRandom(cmd *cobra.Command, args []string) {
 	if len(args) < 2 {
 		Exit(fmt.Errorf("Enter the number of validators and a chain_id"))
 	}
+
 	N, err := strconv.Atoi(args[0])
 	if err != nil {
 		Exit(fmt.Errorf("Please provide an integer number of validators to create"))
@@ -157,112 +213,15 @@ func cliRandom(cmd *cobra.Command, args []string) {
 			mulDir := fmt.Sprintf("%s_%d", DirFlag, i)
 			IfExit(os.MkdirAll(mulDir, 0700))
 			IfExit(ioutil.WriteFile(path.Join(mulDir, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(mulDir, "config.toml"), []byte(defaultConfig), 0644))
+			IfExit(ioutil.WriteFile(path.Join(mulDir, "config.toml"), []byte(setDefaultConfig(i, chainID, SeedsFlag)), 0644))
 			IfExit(ioutil.WriteFile(path.Join(mulDir, "genesis.json"), genesisBytes, 0644))
 		} else {
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(defaultConfig), 0644))
+			IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(setDefaultConfig(i, chainID, SeedsFlag)), 0644))
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 		}
 	}
 	fmt.Printf("config.toml, genesis.json and priv_validator.json files saved in %s\n", DirFlag)
-}
-
-func cliMulti(cmd *cobra.Command, args []string) {
-	if len(args) < 1 {
-		Exit(fmt.Errorf("Enter a chain_id"))
-	}
-	chainID := args[0]
-
-	//TODO convert to addrs
-	//TODO better logic -> refactor; set defaults, or add them as flags??
-	if PubkeyFlag == "" && CsvPathFlag == "" {
-		Exit(fmt.Errorf("Enter one or more pub keys or path to .csv"))
-	}
-
-	var pubkeys []string
-	var amts []string
-	var names []string
-	//	var perms []string
-	amt := []int64{}
-	if CsvPathFlag != "" {
-		//TODO figure out perms
-		pubkeys, amts, names, _ = parseCsv(CsvPathFlag)
-
-		amt = make([]int64, len(amts))
-		for i, a := range amts {
-			var err error
-			amt[i], err = strconv.ParseInt(a, 10, 64)
-			if err != nil {
-				Exit(fmt.Errorf("Invalid amount: %v", err))
-			}
-		}
-	} else {
-		pubkeys = strings.Split(PubkeyFlag, " ")
-		//	amt = int64(1) << 50
-		amt = []int64{int64(1) << 50}
-		names = []string{""}
-	}
-
-	pubKeyBytes := make([][]byte, len(pubkeys))
-	for i, k := range pubkeys {
-		var err error
-		pubKeyBytes[i], err = hex.DecodeString(k)
-		if err != nil {
-			Exit(fmt.Errorf("Pubkey (%s) is invalid hex: %v", k, err))
-		}
-	}
-	genDoc := state.GenesisDoc{
-		ChainID: chainID,
-	}
-	genDoc.Accounts = make([]state.GenesisAccount, len(pubkeys))
-	genDoc.Validators = make([]state.GenesisValidator, len(pubkeys))
-
-	var pubKey account.PubKeyEd25519
-	unbAmt := int64(1) << 50
-
-	i := 0
-	for s, kb := range pubKeyBytes {
-		copy(pubKey[:], kb)
-		addr := pubKey.Address()
-
-		genDoc.Accounts[s] = state.GenesisAccount{
-			Address: addr,
-			Amount:  amt[i],
-			Name:    names[i],
-		}
-		genDoc.Validators[s] = state.GenesisValidator{
-			PubKey: pubKey,
-			Amount: amt[i],
-			Name:   names[i],
-			UnbondTo: []state.BasicAccount{
-				state.BasicAccount{
-					Address: addr,
-					Amount:  unbAmt,
-				},
-			},
-		}
-		if CsvPathFlag != "" {
-			i++
-		}
-	}
-
-	buf, buf2, n, err := new(bytes.Buffer), new(bytes.Buffer), new(int64), new(error)
-	wire.WriteJSON(genDoc, buf, n, err)
-	IfExit(*err)
-	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
-	genesisBytes := buf2.Bytes()
-
-	fmt.Println(string(genesisBytes))
-	if DirFlag == "" {
-		DirFlag = path.Join(DataContainersPath, chainID)
-	}
-	if _, err := os.Stat(DirFlag); err != nil {
-		IfExit(os.MkdirAll(DirFlag, 0700))
-	}
-
-	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
-	fmt.Printf("genesis.json saved in %s\n", DirFlag)
 }
 
 //takes a csv in the format defined [here]

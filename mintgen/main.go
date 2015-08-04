@@ -5,21 +5,14 @@ import (
 )
 
 var (
-	DirFlag     string
-	PubkeyFlag  string
-	CsvPathFlag string
+	DirFlag    string
+	PubkeyFlag string
 	//AddrsFlag  string
-
+	CsvPathFlag string
+	SeedsFlag   string
 )
 
 func main() {
-	var singleCmd = &cobra.Command{
-		Use:   "single",
-		Short: "mintgen single <chain_id>",
-		Long:  "Create a genesis.json with <chain_id> from a priv_validator.json passed on stdin",
-		Run:   cliSingle,
-	}
-	singleCmd.Flags().StringVarP(&PubkeyFlag, "pub", "p", "", "pubkey to use instead of a priv_validator.json")
 
 	var randomCmd = &cobra.Command{
 		Use:   "random",
@@ -27,24 +20,27 @@ func main() {
 		Long:  "Create <N> keys and a genesis.json with corresponding validators and chain_id <name>",
 		Run:   cliRandom,
 	}
-	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in. Default is ~/.eris/data/<chain_id>")
 
-	//XXX uses pubkey until I figure out how to do conversion
-	var multiCmd = &cobra.Command{
-		Use:   "multi",
-		Short: "mintgen multi <chain_id> [flags] ",
-		Long:  "Create a genesis.json with --pub <pub_1> <pub_2> <pub_N> or --csv <path_to_file>. either flag is req'd",
-		Run:   cliMulti,
+	var knownCmd = &cobra.Command{
+		Use:   "known",
+		Short: "mintgen known <chain_id> [flags] ",
+		Long:  "Create a genesis.json with --pub <pub_1> <pub_2> <pub_N> or --csv <path_to_file>, or pass stdin",
+		Run:   cliKnown,
 	}
-	multiCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
-	multiCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
-	multiCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv that looks like: (pubkeys, addrs?, starting bal, perms)")
+
+	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in. Default is ~/.eris/data/<chain_id>")
+	randomCmd.Flags().StringVarP(&SeedsFlag, "seeds", "", "", "address for seeding nodes")
+
+	knownCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
+	knownCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
+	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv that looks like: (pubkeys, addrs?, starting bal, perms)")
+	knownCmd.Flags().StringVarP(&SeedsFlag, "seeds", "", "", "address for seeding nodes")
 
 	var rootCmd = &cobra.Command{
 		Use:   "mintgen",
 		Short: "a tool for generating tendermint genesis files",
 		Long:  "a tool for generating tendermint genesis files",
 	}
-	rootCmd.AddCommand(singleCmd, randomCmd, multiCmd)
+	rootCmd.AddCommand(randomCmd, knownCmd)
 	rootCmd.Execute()
 }
