@@ -130,6 +130,10 @@ func cliRebond(c *cli.Context) {
 
 func unpackSignAndBroadcast(result *core.TxResult, err error) {
 	common.IfExit(err)
+	if result == nil {
+		// if we don't provide --sign or --broadcast
+		return
+	}
 	fmt.Printf("Transaction Hash: %X\n", result.Hash)
 	if result.Return != nil {
 		fmt.Printf("Return Value: %X\n", result.Return)
