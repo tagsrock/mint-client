@@ -118,6 +118,9 @@ func cliAccounts(c *cli.Context) {
 		}
 		r, err := client.GetAccount(addrBytes)
 		ifExit(err)
+		if r == nil {
+			exit(fmt.Errorf("Account %X does not exist", addrBytes))
+		}
 		s, err := formatOutput(c, 1, r)
 		ifExit(err)
 		fmt.Println(s)
