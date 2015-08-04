@@ -74,15 +74,6 @@ func cliKnown(cmd *cobra.Command, args []string) {
 	genesisBytes := buf2.Bytes()
 
 	fmt.Println(string(genesisBytes))
-	if DirFlag == "" {
-		DirFlag = path.Join(DataContainersPath, chainID)
-	}
-	if _, err := os.Stat(DirFlag); err != nil {
-		IfExit(os.MkdirAll(DirFlag, 0700))
-	}
-
-	IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
-	fmt.Printf("genesis.json saved in %s\n", DirFlag)
 }
 
 func cliRandom(cmd *cobra.Command, args []string) {

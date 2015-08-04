@@ -42,7 +42,7 @@ rm priv_validator.json
 echo "******** GENERATE GENESIS.JSON ************"
 
 # run mintgen in mint-client with volumes from tendermint-data and using the pubkey
-docker run --rm --volumes-from mct_tendermint-data -t mct_client bash -c "mintgen single --pub=$PUBKEY $CHAIN_ID > $TMROOT/genesis.json"
+docker run --rm --volumes-from mct_tendermint-data -t mct_client bash -c "mintgen known --pub=$PUBKEY $CHAIN_ID > $TMROOT/genesis.json"
 GENESIS=`docker run --rm --volumes-from mct_tendermint-data -t mct_client bash -c "cat $TMROOT/genesis.json"`
 echo "genesis $GENESIS"
 
