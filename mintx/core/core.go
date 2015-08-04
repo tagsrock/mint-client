@@ -654,6 +654,10 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err.Error())
 			return
 		}
+		if ac == nil {
+			err = fmt.Errorf("unknown account %X", addrBytes)
+			return
+		}
 		nonce = int64(ac.Sequence) + 1
 	} else {
 		nonce, err = strconv.ParseInt(nonceS, 10, 64)
