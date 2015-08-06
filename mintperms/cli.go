@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common"
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 )
@@ -16,7 +16,7 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 		Exit(fmt.Errorf("Please enter at least one `<permission>:<value>` pair like `send:0 call:1 create_account:1`"))
 	}
 
-	bp := types.NewBasePermissions()
+	bp := types.ZeroBasePermissions
 
 	for _, a := range args {
 		spl := strings.Split(a, ":")
@@ -38,10 +38,10 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 func coreIntsToStrings(perms, setbits types.PermFlag) map[string]bool {
 	m := make(map[string]bool)
 
-	for i := uint(0); i < types.NumBasePermissions; i++ {
+	for i := uint(0); i < types.NumPermissions; i++ {
 		pf := types.PermFlag(1 << i)
 		if pf&setbits > 0 {
-			name, _ := types.PermFlagToString(pf)
+			name := types.PermFlagToString(pf)
 			m[name] = pf&perms > 0
 		}
 	}
@@ -67,7 +67,7 @@ func cliIntsToStrings(cmd *cobra.Command, args []string) {
 }
 
 func cliBBPB(cmd *cobra.Command, args []string) {
-	pf := types.DefaultBBPB
+	pf := types.DefaultPermFlags
 	fmt.Println("Perms and SetBit (As Integers)")
 	fmt.Printf("%d\t%d\n", pf, pf)
 	fmt.Println("\nPerms and SetBit (As Bitmasks)")
@@ -81,7 +81,7 @@ func cliBBPB(cmd *cobra.Command, args []string) {
 }
 
 func cliAll(cmd *cobra.Command, args []string) {
-	pf := types.AllSet
+	pf := types.AllPermFlags
 	fmt.Println("Perms and SetBit (As Integers)")
 	fmt.Printf("%d\t%d\n", pf, pf)
 	fmt.Println("\nPerms and SetBit (As Bitmasks)")

@@ -1,6 +1,8 @@
 # mint-client
 Command line interfaces for low-level conversations with tendermint chains
 
+See tests in ./DOCKER
+
 mintx
 -----
 
@@ -10,6 +12,26 @@ mintinfo
 --------
 
 For making RPC calls to a node and parsing responses
+
+mintgen 
+-------
+
+For generating tendermint genesis.json's
+
+mintkey
+--------
+
+For converting between eris-keys and tendermint priv_validator.json's
+
+mintdump
+--------
+
+For dumping and restoring blockchain state data
+
+mintperm
+---------
+
+For converting between human-readable and machine-readable tendermint permissions
 
 
 Walkabout

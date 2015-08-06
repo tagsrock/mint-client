@@ -1,11 +1,11 @@
 package state
 
 import (
-	ac "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
-	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types" // for GlobalPermissionAddress ...
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types" // for GlobalPermissionAddress ...
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm/sha3"
 )
 
 type TxCache struct {
@@ -28,7 +28,7 @@ func NewTxCache(backend *BlockCache) *TxCache {
 // TxCache.account
 
 func (cache *TxCache) GetAccount(addr Word256) *vm.Account {
-	acc, removed := vmUnpack(cache.accounts[addr])
+	acc, removed := cache.accounts[addr].unpack()
 	if removed {
 		return nil
 	} else if acc == nil {
@@ -42,23 +42,19 @@ func (cache *TxCache) GetAccount(addr Word256) *vm.Account {
 
 func (cache *TxCache) UpdateAccount(acc *vm.Account) {
 	addr := acc.Address
-	// SANITY CHECK
-	_, removed := vmUnpack(cache.accounts[addr])
+	_, removed := cache.accounts[addr].unpack()
 	if removed {
-		panic("UpdateAccount on a removed account")
+		PanicSanity("UpdateAccount on a removed account")
 	}
-	// SANITY CHECK END
 	cache.accounts[addr] = vmAccountInfo{acc, false}
 }
 
 func (cache *TxCache) RemoveAccount(acc *vm.Account) {
 	addr := acc.Address
-	// SANITY CHECK
-	_, removed := vmUnpack(cache.accounts[addr])
+	_, removed := cache.accounts[addr].unpack()
 	if removed {
-		panic("RemoveAccount on a removed account")
+		PanicSanity("RemoveAccount on a removed account")
 	}
-	// SANITY CHECK END
 	cache.accounts[addr] = vmAccountInfo{acc, true}
 }
 
@@ -69,24 +65,28 @@ func (cache *TxCache) CreateAccount(creator *vm.Account) *vm.Account {
 	nonce := creator.Nonce
 	creator.Nonce += 1
 
-	addr := LeftPadWord256(NewContractAddress(creator.Address.Postfix(20), nonce))
+	addr := LeftPadWord256(NewContractAddress(creator.Address.Postfix(20), int(nonce)))
 
 	// Create account from address.
-	account, removed := vmUnpack(cache.accounts[addr])
+	account, removed := cache.accounts[addr].unpack()
 	if removed || account == nil {
 		account = &vm.Account{
 			Address:     addr,
 			Balance:     0,
 			Code:        nil,
 			Nonce:       0,
-			StorageRoot: Zero256,
 			Permissions: cache.GetAccount(ptypes.GlobalPermissionsAddress256).Permissions,
-			Other:       nil,
+			Other: vmAccountOther{
+				PubKey:      nil,
+				StorageRoot: nil,
+			},
 		}
 		cache.accounts[addr] = vmAccountInfo{account, false}
 		return account
 	} else {
-		panic(Fmt("Could not create account, address already exists: %X", addr))
+		// either we've messed up nonce handling, or sha3 is broken
+		PanicSanity(Fmt("Could not create account, address already exists: %X", addr))
+		return nil
 	}
 }
 
@@ -107,9 +107,9 @@ func (cache *TxCache) GetStorage(addr Word256, key Word256) Word256 {
 
 // NOTE: Set value to zero to removed from the trie.
 func (cache *TxCache) SetStorage(addr Word256, key Word256, value Word256) {
-	_, removed := vmUnpack(cache.accounts[addr])
+	_, removed := cache.accounts[addr].unpack()
 	if removed {
-		panic("SetStorage() on a removed account")
+		PanicSanity("SetStorage() on a removed account")
 	}
 	cache.storages[Tuple256{addr, key}] = value
 }
@@ -129,15 +129,13 @@ func (cache *TxCache) Sync() {
 
 	// Remove or update accounts
 	for addr, accInfo := range cache.accounts {
-		acc, removed := vmUnpack(accInfo)
+		acc, removed := accInfo.unpack()
 		if removed {
 			cache.backend.RemoveAccount(addr.Postfix(20))
 		} else {
 			cache.backend.UpdateAccount(toStateAccount(acc))
 		}
 	}
-
-	// TODO support logs, add them to the cache somehow.
 }
 
 func (cache *TxCache) AddLog(log *vm.Log) {
@@ -147,48 +145,53 @@ func (cache *TxCache) AddLog(log *vm.Log) {
 //-----------------------------------------------------------------------------
 
 // Convenience function to return address of new contract
-func NewContractAddress(caller []byte, nonce uint64) []byte {
-	temp := make([]byte, 32+8)
-	copy(temp, caller)
-	PutUint64BE(temp[32:], nonce)
-	return sha3.Sha3(temp)[:20]
+func NewContractAddress(caller []byte, nonce int) []byte {
+	return types.NewContractAddress(caller, nonce)
 }
 
 // Converts backend.Account to vm.Account struct.
-func toVMAccount(acc *ac.Account) *vm.Account {
+func toVMAccount(acc *acm.Account) *vm.Account {
 	return &vm.Account{
 		Address:     LeftPadWord256(acc.Address),
 		Balance:     acc.Balance,
 		Code:        acc.Code, // This is crazy.
-		Nonce:       uint64(acc.Sequence),
-		StorageRoot: LeftPadWord256(acc.StorageRoot),
-		Permissions: acc.Permissions.Copy(),
-		Other:       acc.PubKey,
+		Nonce:       int64(acc.Sequence),
+		Permissions: acc.Permissions, // Copy
+		Other: vmAccountOther{
+			PubKey:      acc.PubKey,
+			StorageRoot: acc.StorageRoot,
+		},
 	}
 }
 
 // Converts vm.Account to backend.Account struct.
-func toStateAccount(acc *vm.Account) *ac.Account {
-	pubKey, ok := acc.Other.(ac.PubKey)
-	if !ok {
-		pubKey = nil
+func toStateAccount(acc *vm.Account) *acm.Account {
+	var pubKey acm.PubKey
+	var storageRoot []byte
+	if acc.Other != nil {
+		pubKey, storageRoot = acc.Other.(vmAccountOther).unpack()
 	}
 
-	var storageRoot []byte
-	if acc.StorageRoot.IsZero() {
-		storageRoot = nil
-	} else {
-		storageRoot = acc.StorageRoot.Bytes()
-	}
-	return &ac.Account{
+	return &acm.Account{
 		Address:     acc.Address.Postfix(20),
 		PubKey:      pubKey,
 		Balance:     acc.Balance,
 		Code:        acc.Code,
-		Sequence:    uint(acc.Nonce),
+		Sequence:    int(acc.Nonce),
 		StorageRoot: storageRoot,
-		Permissions: acc.Permissions,
+		Permissions: acc.Permissions, // Copy
 	}
+}
+
+// Everything in acmAccount that doesn't belong in
+// exported vmAccount fields.
+type vmAccountOther struct {
+	PubKey      acm.PubKey
+	StorageRoot []byte
+}
+
+func (accOther vmAccountOther) unpack() (acm.PubKey, []byte) {
+	return accOther.PubKey, accOther.StorageRoot
 }
 
 type vmAccountInfo struct {
@@ -196,6 +199,6 @@ type vmAccountInfo struct {
 	removed bool
 }
 
-func vmUnpack(accInfo vmAccountInfo) (*vm.Account, bool) {
+func (accInfo vmAccountInfo) unpack() (*vm.Account, bool) {
 	return accInfo.account, accInfo.removed
 }

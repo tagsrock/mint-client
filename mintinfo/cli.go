@@ -9,13 +9,13 @@ import (
 	"strconv"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 func prettyPrint(o interface{}) (string, error) {
 	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, binary.JSONBytes(o), "", "\t")
+	err := json.Indent(&prettyJSON, wire.JSONBytes(o), "", "\t")
 	if err != nil {
 		return "", err
 	}
@@ -118,6 +118,9 @@ func cliAccounts(c *cli.Context) {
 		}
 		r, err := client.GetAccount(addrBytes)
 		ifExit(err)
+		if r == nil {
+			exit(fmt.Errorf("Account %X does not exist", addrBytes))
+		}
 		s, err := formatOutput(c, 1, r)
 		ifExit(err)
 		fmt.Println(s)
@@ -156,7 +159,7 @@ func cliBlocks(c *cli.Context) {
 		height := args[0]
 		i, err := strconv.ParseUint(height, 10, 32)
 		ifExit(err)
-		r, err := client.GetBlock(uint(i))
+		r, err := client.GetBlock(int(i))
 		ifExit(err)
 		s, err := formatOutput(c, 1, r)
 		ifExit(err)
@@ -170,7 +173,7 @@ func cliBlocks(c *cli.Context) {
 		if maxHeight <= minHeight {
 			exit(fmt.Errorf("maxHeight must be greater than minHeight"))
 		}
-		r, err := client.BlockchainInfo(uint(minHeight), uint(maxHeight))
+		r, err := client.BlockchainInfo(int(minHeight), int(maxHeight))
 		ifExit(err)
 		s, err := formatOutput(c, 2, r)
 		ifExit(err)
@@ -207,34 +210,38 @@ func cliStorage(c *cli.Context) {
 
 func cliCall(c *cli.Context) {
 	args := c.Args()
-	if len(args) < 2 {
-		exit(fmt.Errorf("must specify an address and data to send"))
+	if len(args) < 3 {
+		exit(fmt.Errorf("must specify a from address, to address and data to send"))
 	}
-	addr, data := args[0], args[1]
-	addrBytes, err := hex.DecodeString(addr)
+	from, to, data := args[0], args[1], args[2]
+	fromAddrBytes, err := hex.DecodeString(from)
+	ifExit(err)
+	toAddrBytes, err := hex.DecodeString(to)
 	ifExit(err)
 	dataBytes, err := hex.DecodeString(data)
 	ifExit(err)
-	r, err := client.Call(addrBytes, dataBytes)
+	r, err := client.Call(fromAddrBytes, toAddrBytes, dataBytes)
 	ifExit(err)
-	s, err := formatOutput(c, 2, r)
+	s, err := formatOutput(c, 3, r)
 	ifExit(err)
 	fmt.Println(s)
 }
 
 func cliCallCode(c *cli.Context) {
 	args := c.Args()
-	if len(args) < 2 {
+	if len(args) < 3 {
 		exit(fmt.Errorf("must specify code to execute and data to send"))
 	}
-	code, data := args[0], args[1]
+	from, code, data := args[0], args[1], args[2]
+	fromAddrBytes, err := hex.DecodeString(from)
+	ifExit(err)
 	codeBytes, err := hex.DecodeString(code)
 	ifExit(err)
 	dataBytes, err := hex.DecodeString(data)
 	ifExit(err)
-	r, err := client.CallCode(codeBytes, dataBytes)
+	r, err := client.CallCode(fromAddrBytes, codeBytes, dataBytes)
 	ifExit(err)
-	s, err := formatOutput(c, 2, r)
+	s, err := formatOutput(c, 3, r)
 	ifExit(err)
 	fmt.Println(s)
 }
@@ -251,7 +258,7 @@ func cliBroadcast(c *cli.Context) {
 	var tx types.Tx
 	n := new(int64)
 	buf := bytes.NewBuffer(txBytes)
-	binary.ReadBinary(tx, buf, n, &err)
+	wire.ReadBinary(tx, buf, n, &err)
 	ifExit(err)
 	r, err := client.BroadcastTx(tx)
 	ifExit(err)

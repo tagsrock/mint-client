@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/log"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/log"
 )
 
 var (
@@ -86,6 +86,11 @@ func main() {
 		broadcastFlag = cli.BoolFlag{
 			Name:  "broadcast",
 			Usage: "broadcast the transaction using the daemon at MINTX_NODE_ADDR",
+		}
+
+		waitFlag = cli.BoolFlag{
+			Name:  "wait",
+			Usage: "wait for the transaction to be committed in a block",
 		}
 
 		//----------------------------------------------------------------
@@ -214,6 +219,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				amtFlag,
 				toFlag,
@@ -281,6 +287,40 @@ func main() {
 			},
 		}
 
+		permissionsCmd = cli.Command{
+			Name:   "perm",
+			Usage:  "mintx perm <function name> <args ...>",
+			Action: cliPermissions,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+				pubkeyFlag,
+				addrFlag,
+
+				signFlag,
+				broadcastFlag,
+				nonceFlag,
+			},
+		}
+
+		newAccountCmd = cli.Command{
+			Name:   "new",
+			Usage:  "mintx new",
+			Action: cliNewAccount,
+			Flags: []cli.Flag{
+				signAddrFlag,
+				nodeAddrFlag,
+
+				chainidFlag,
+				pubkeyFlag,
+
+				signFlag,
+				broadcastFlag,
+			},
+		}
+
 		/*
 			inputCmd = cli.Command{
 				Name:   "input",
@@ -309,7 +349,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "mintx"
 	app.Usage = "Create and broadcast tendermint txs"
-	app.Version = "0.0.1"
+	app.Version = "0.0.2" // move core funcs to own lib
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
 	app.Before = before
@@ -327,6 +367,8 @@ func main() {
 		unbondCmd,
 		rebondCmd,
 		// dupeoutCmd,
+		permissionsCmd,
+		newAccountCmd,
 	}
 	app.Run(os.Args)
 
@@ -349,12 +391,4 @@ func after(c *cli.Context) error {
 func exit(err error) {
 	fmt.Println(err)
 	os.Exit(1)
-}
-
-func ifExit(err error) {
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 }

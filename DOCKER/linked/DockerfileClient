@@ -1,0 +1,25 @@
+# Pull base image.
+FROM eris/base
+
+ENV DOCKERFILES ./DOCKER/linked
+
+# grab deps (gmp)
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+    libgmp3-dev jq && \
+  rm -rf /var/lib/apt/lists/*
+
+# set the repo and install tendermint
+ENV repo /go/src/github.com/eris-ltd/mint-client
+ADD . $repo
+WORKDIR $repo
+RUN go install ./...
+
+ADD ./$DOCKERFILES/test.sh /test.sh
+RUN chown $USER:$USER /test.sh
+
+# set user
+USER $USER
+WORKDIR /home/eris
+
+CMD ["/test.sh"]

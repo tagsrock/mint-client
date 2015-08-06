@@ -2,19 +2,20 @@ package types
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"sync"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
+
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
-const (
-	partSize = 4096 // 4KB
+const ( // 4KB
+	partSize = 4096
 )
 
 var (
@@ -34,11 +35,8 @@ func (part *Part) Hash() []byte {
 	if part.hash != nil {
 		return part.hash
 	} else {
-		hasher := sha256.New()
-		_, err := hasher.Write(part.Bytes)
-		if err != nil {
-			panic(err)
-		}
+		hasher := ripemd160.New()
+		hasher.Write(part.Bytes) // doesn't err
 		part.hash = hasher.Sum(nil)
 		return part.hash
 	}
@@ -61,7 +59,7 @@ func (part *Part) StringIndented(indent string) string {
 //-------------------------------------
 
 type PartSetHeader struct {
-	Total uint   `json:"total"`
+	Total int    `json:"total"`
 	Hash  []byte `json:"hash"`
 }
 
@@ -78,19 +76,19 @@ func (psh PartSetHeader) Equals(other PartSetHeader) bool {
 }
 
 func (psh PartSetHeader) WriteSignBytes(w io.Writer, n *int64, err *error) {
-	binary.WriteTo([]byte(Fmt(`{"hash":"%X","total":%v}`, psh.Hash, psh.Total)), w, n, err)
+	wire.WriteTo([]byte(Fmt(`{"hash":"%X","total":%v}`, psh.Hash, psh.Total)), w, n, err)
 }
 
 //-------------------------------------
 
 type PartSet struct {
-	total uint
+	total int
 	hash  []byte
 
 	mtx           sync.Mutex
 	parts         []*Part
 	partsBitArray *BitArray
-	count         uint
+	count         int
 }
 
 // Returns an immutable, full PartSet from the data bytes.
@@ -100,14 +98,14 @@ func NewPartSetFromData(data []byte) *PartSet {
 	total := (len(data) + partSize - 1) / partSize
 	parts := make([]*Part, total)
 	parts_ := make([]merkle.Hashable, total)
-	partsBitArray := NewBitArray(uint(total))
+	partsBitArray := NewBitArray(total)
 	for i := 0; i < total; i++ {
 		part := &Part{
 			Bytes: data[i*partSize : MinInt(len(data), (i+1)*partSize)],
 		}
 		parts[i] = part
 		parts_[i] = part
-		partsBitArray.SetIndex(uint(i), true)
+		partsBitArray.SetIndex(i, true)
 	}
 	// Compute merkle proofs
 	proofs := merkle.SimpleProofsFromHashables(parts_)
@@ -115,11 +113,11 @@ func NewPartSetFromData(data []byte) *PartSet {
 		parts[i].Proof = *proofs[i]
 	}
 	return &PartSet{
-		total:         uint(total),
+		total:         total,
 		hash:          proofs[0].RootHash,
 		parts:         parts,
 		partsBitArray: partsBitArray,
-		count:         uint(total),
+		count:         total,
 	}
 }
 
@@ -129,7 +127,7 @@ func NewPartSetFromHeader(header PartSetHeader) *PartSet {
 		total:         header.Total,
 		hash:          header.Hash,
 		parts:         make([]*Part, header.Total),
-		partsBitArray: NewBitArray(uint(header.Total)),
+		partsBitArray: NewBitArray(header.Total),
 		count:         0,
 	}
 }
@@ -173,14 +171,14 @@ func (ps *PartSet) HashesTo(hash []byte) bool {
 	return bytes.Equal(ps.hash, hash)
 }
 
-func (ps *PartSet) Count() uint {
+func (ps *PartSet) Count() int {
 	if ps == nil {
 		return 0
 	}
 	return ps.count
 }
 
-func (ps *PartSet) Total() uint {
+func (ps *PartSet) Total() int {
 	if ps == nil {
 		return 0
 	}
@@ -208,12 +206,12 @@ func (ps *PartSet) AddPart(part *Part) (bool, error) {
 
 	// Add part
 	ps.parts[part.Proof.Index] = part
-	ps.partsBitArray.SetIndex(uint(part.Proof.Index), true)
+	ps.partsBitArray.SetIndex(part.Proof.Index, true)
 	ps.count++
 	return true, nil
 }
 
-func (ps *PartSet) GetPart(index uint) *Part {
+func (ps *PartSet) GetPart(index int) *Part {
 	ps.mtx.Lock()
 	defer ps.mtx.Unlock()
 	return ps.parts[index]
@@ -225,7 +223,7 @@ func (ps *PartSet) IsComplete() bool {
 
 func (ps *PartSet) GetReader() io.Reader {
 	if !ps.IsComplete() {
-		panic("Cannot GetReader() on incomplete PartSet")
+		PanicSanity("Cannot GetReader() on incomplete PartSet")
 	}
 	buf := []byte{}
 	for _, part := range ps.parts {

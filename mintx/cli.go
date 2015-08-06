@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/eris-ltd/mint-client/mintx/core"
+
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 )
 
 // do we really need these?
@@ -13,195 +15,128 @@ import (
 func cliInput(c *cli.Context) {
 	pubkey, amtS, nonceS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr")
 	input, err := coreInput(pubkey, amtS, nonceS, addr)
-	ifExit(err)
+	common.IfExit(err)
 	fmt.Printf("%s\n", input)
 }
 
 func cliOutput(c *cli.Context) {
 	addr, amtS := c.String("addr"), c.String("amt")
 	output, err := coreOutput(addr, amtS)
-	ifExit(err)
+	common.IfExit(err)
 	fmt.Printf("%s\n", output)
 }
 */
+
 func cliSend(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
-	tx, err := coreSend(nodeAddr, pubkey, addr, toAddr, amtS, nonceS)
-	ifExit(err)
-
+	tx, err := core.Send(nodeAddr, pubkey, addr, toAddr, amtS, nonceS)
+	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Inputs[0].Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		tx.Inputs[0].Signature = sigED
-
-		logger.Debugf("%X\n", sig)
-	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-	}
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
 }
 
 func cliName(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
 
 	if c.IsSet("data") && c.IsSet("data-file") {
-		exit(fmt.Errorf("Please specify only one of --data and --data-file"))
+		common.Exit(fmt.Errorf("Please specify only one of --data and --data-file"))
 	}
 	name, data, dataFile := c.String("name"), c.String("data"), c.String("data-file")
 	if data == "" && dataFile != "" {
 		b, err := ioutil.ReadFile(dataFile)
-		ifExit(err)
+		common.IfExit(err)
 		data = string(b)
 	}
-	tx, err := coreName(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data)
-	ifExit(err)
-
+	tx, err := core.Name(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data)
+	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Input.Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		tx.Input.Signature = sigED
-
-		logger.Debugf("%X\n", sig)
-	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-	}
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
 }
 
 func cliCall(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
-
 	toAddr, gasS, data := c.String("to"), c.String("gas"), c.String("data")
-	tx, err := coreCall(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
-	ifExit(err)
-
+	tx, err := core.Call(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
+	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+}
 
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Input.Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		tx.Input.Signature = sigED
+func cliPermissions(c *cli.Context) {
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
+	pubkey, nonceS, addr := c.String("pubkey"), c.String("nonce"), c.String("addr")
 
-		logger.Debugf("%X\n", sig)
+	// all functions take at least 2 args (+ name)
+	if len(c.Args()) < 3 {
+		common.Exit(fmt.Errorf("Please enter the permission function you'd like to call, followed by it's arguments"))
 	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-		if receipt.CreatesContract == 1 {
-			fmt.Printf("Contract Address: %X\n", receipt.ContractAddr)
-		}
-	}
+	permFunc := c.Args()[0]
+	tx, err := core.Permissions(nodeAddr, pubkey, addr, nonceS, permFunc, c.Args()[1:])
+	common.IfExit(err)
+	logger.Debugf("%v\n", tx)
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+}
+
+func cliNewAccount(c *cli.Context) {
+	/*
+		chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+		pubkey := c.String("pubkey")
+
+		tx, err := coreNewAccount(nodeAddr,signAddr, pubkey, chainID)
+		common.IfExit(err)
+
+		logger.Debugf("%v\n", tx)
+		unpackSignAndBroadcast(core.SignAndBroadcast( chainID, nodeAddr,signAddr, tx, sign, broadcast, wait)
+	*/
 }
 
 func cliBond(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, unbondAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("unbond-to")
-	tx, err := coreBond(nodeAddr, pubkey, unbondAddr, amtS, nonceS)
-	ifExit(err)
+	tx, err := core.Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS)
+	common.IfExit(err)
 
 	logger.Debugf("%v\n", tx)
-
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Inputs[0].Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		// for now we expect the bonder to send from
-		// the same account as his key, but this will obviously need to change
-		tx.Inputs[0].Signature = sigED
-		tx.Signature = sigED
-
-		logger.Debugf("%X\n", sig)
-	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-	}
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
 }
 
 func cliUnbond(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	addr, height := c.String("addr"), c.String("height")
-
-	tx, err := coreUnbond(addr, height)
-	ifExit(err)
-
+	tx, err := core.Unbond(addr, height)
+	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		tx.Signature = sigED
-
-		logger.Debugf("%X\n", sig)
-	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
-	}
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
 }
 
 func cliRebond(c *cli.Context) {
-	chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
+	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
+	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	addr, height := c.String("addr"), c.String("height")
-
-	tx, err := coreRebond(addr, height)
-	ifExit(err)
-
+	tx, err := core.Rebond(addr, height)
+	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+}
 
-	sign, broadcast := c.Bool("sign"), c.Bool("broadcast")
-	if sign {
-		signAddr := c.String("sign-addr")
-		signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx))
-		addrHex := fmt.Sprintf("%X", tx.Address)
-		sig, err := coreSign(signBytes, addrHex, signAddr)
-		ifExit(err)
-		sigED := account.SignatureEd25519(sig[:])
-		tx.Signature = sigED
-
-		logger.Debugf("%X\n", sig)
+func unpackSignAndBroadcast(result *core.TxResult, err error) {
+	common.IfExit(err)
+	if result == nil {
+		// if we don't provide --sign or --broadcast
+		return
 	}
-	if broadcast {
-		receipt, err := coreBroadcast(tx, nodeAddr)
-		ifExit(err)
-		fmt.Printf("Transaction Hash: %X\n", receipt.TxHash)
+	fmt.Printf("Transaction Hash: %X\n", result.Hash)
+	if result.Return != nil {
+		fmt.Printf("Return Value: %X\n", result.Return)
+		fmt.Printf("Exception: %s\n", result.Exception)
 	}
 }

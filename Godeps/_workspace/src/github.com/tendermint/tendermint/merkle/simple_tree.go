@@ -26,20 +26,22 @@ package merkle
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
+
+	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 func SimpleHashFromTwoHashes(left []byte, right []byte) []byte {
 	var n int64
 	var err error
-	var hasher = sha256.New()
-	binary.WriteByteSlice(left, hasher, &n, &err)
-	binary.WriteByteSlice(right, hasher, &n, &err)
+	var hasher = ripemd160.New()
+	wire.WriteByteSlice(left, hasher, &n, &err)
+	wire.WriteByteSlice(right, hasher, &n, &err)
 	if err != nil {
-		panic(err)
+		PanicCrisis(err)
 	}
 	return hasher.Sum(nil)
 }
@@ -69,10 +71,10 @@ func SimpleHashFromBinaries(items []interface{}) []byte {
 
 // General Convenience
 func SimpleHashFromBinary(item interface{}) []byte {
-	hasher, n, err := sha256.New(), new(int64), new(error)
-	binary.WriteBinary(item, hasher, n, err)
+	hasher, n, err := ripemd160.New(), new(int64), new(error)
+	wire.WriteBinary(item, hasher, n, err)
 	if *err != nil {
-		panic(err)
+		PanicCrisis(err)
 	}
 	return hasher.Sum(nil)
 }
@@ -90,8 +92,8 @@ func SimpleHashFromHashables(items []Hashable) []byte {
 //--------------------------------------------------------------------------------
 
 type SimpleProof struct {
-	Index       uint     `json:"index"`
-	Total       uint     `json:"total"`
+	Index       int      `json:"index"`
+	Total       int      `json:"total"`
 	LeafHash    []byte   `json:"leaf_hash"`
 	InnerHashes [][]byte `json:"inner_hashes"` // Hashes from leaf's sibling to a root's child.
 	RootHash    []byte   `json:"root_hash"`
@@ -103,8 +105,8 @@ func SimpleProofsFromHashables(items []Hashable) (proofs []*SimpleProof) {
 	proofs = make([]*SimpleProof, len(items))
 	for i, trail := range trails {
 		proofs[i] = &SimpleProof{
-			Index:       uint(i),
-			Total:       uint(len(items)),
+			Index:       i,
+			Total:       len(items),
 			LeafHash:    trail.Hash,
 			InnerHashes: trail.FlattenInnerHashes(),
 			RootHash:    root.Hash,
@@ -154,14 +156,15 @@ func (sp *SimpleProof) StringIndented(indent string) string {
 
 // Use the leafHash and innerHashes to get the root merkle hash.
 // If the length of the innerHashes slice isn't exactly correct, the result is nil.
-func computeHashFromInnerHashes(index uint, total uint, leafHash []byte, innerHashes [][]byte) []byte {
+func computeHashFromInnerHashes(index int, total int, leafHash []byte, innerHashes [][]byte) []byte {
 	// Recursive impl.
 	if index >= total {
 		return nil
 	}
 	switch total {
 	case 0:
-		panic("Cannot call computeHashFromInnerHashes() with 0 total")
+		PanicSanity("Cannot call computeHashFromInnerHashes() with 0 total")
+		return nil
 	case 1:
 		if len(innerHashes) != 0 {
 			return nil
