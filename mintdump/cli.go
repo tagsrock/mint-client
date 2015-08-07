@@ -8,6 +8,7 @@ import (
 	"os"
 
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
+
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
@@ -21,7 +22,7 @@ import (
 // core dump/restore functions
 
 // dump the latest state to json
-func CoreDump() []byte {
+func CoreDump(dumpval bool) []byte {
 	// Get State
 	stateDB := dbm.GetDB("state")
 	st := sm.LoadState(stateDB)
@@ -30,10 +31,13 @@ func CoreDump() []byte {
 	}
 
 	stJ := new(State)
-	stJ.BondedValidators = st.BondedValidators
-	stJ.LastBondedValidators = st.LastBondedValidators
-	stJ.UnbondingValidators = st.UnbondingValidators
 
+	//default is true, flag omits vals from dump
+	if dumpval {
+		stJ.BondedValidators = st.BondedValidators
+		stJ.LastBondedValidators = st.LastBondedValidators
+		stJ.UnbondingValidators = st.UnbondingValidators
+	}
 	// iterate through accounts tree
 	// track storage roots as we go
 	storageRoots := [][]byte{}
@@ -62,12 +66,13 @@ func CoreDump() []byte {
 	}
 
 	// get all validator infos
-	st.GetValidatorInfos().Iterate(func(key interface{}, value interface{}) (stopped bool) {
-		vi := value.(*sm.ValidatorInfo)
-		stJ.ValidatorInfos = append(stJ.ValidatorInfos, vi)
-		return false
-	})
-
+	if dumpval {
+		st.GetValidatorInfos().Iterate(func(key interface{}, value interface{}) (stopped bool) {
+			vi := value.(*sm.ValidatorInfo)
+			stJ.ValidatorInfos = append(stJ.ValidatorInfos, vi)
+			return false
+		})
+	}
 	// get all name entries
 	st.GetNames().Iterate(func(key interface{}, value interface{}) (stopped bool) {
 		name := value.(*types.NameRegEntry)
@@ -77,6 +82,7 @@ func CoreDump() []byte {
 
 	w, n, err := new(bytes.Buffer), new(int64), new(error)
 	wire.WriteJSON(stJ, w, n, err)
+
 	IfExit(*err)
 	w2 := new(bytes.Buffer)
 	json.Indent(w2, w.Bytes(), "", "\t")
@@ -147,12 +153,24 @@ func cliRestore(cmd *cobra.Command, args []string) {
 	}
 	chainID := args[0]
 
-	fi, _ := os.Stdin.Stat()
-	if fi.Size() == 0 {
-		Exit(fmt.Errorf("Please pass data to restore on Stdin"))
+	var err error
+	var b []byte
+
+	if IPFShash == "" {
+		fi, _ := os.Stdin.Stat()
+		if fi.Size() == 0 {
+			Exit(fmt.Errorf("Please pass data to restore on Stdin or specify IPFS hash with --ipfs=\"[hash]\""))
+		}
+		b, err = ioutil.ReadAll(os.Stdin)
+		IfExit(err)
+	} else {
+		url := composeIPFSUrl(HostFlag, ApiFlag)
+
+		w := bytes.NewBuffer([]byte{})
+		w.Write([]byte("Reading file from IPFS. Hash =>\t" + IPFShash + "\n"))
+		b, err = IPFSCat(url, IPFShash, ApiFlag, w)
+		IfExit(err)
 	}
-	b, err := ioutil.ReadAll(os.Stdin)
-	IfExit(err)
 
 	CoreRestore(chainID, b)
 
@@ -162,8 +180,20 @@ func cliRestore(cmd *cobra.Command, args []string) {
 
 }
 
+//TODO stop node / copy issue #18
 func cliDump(cmd *cobra.Command, args []string) {
-	fmt.Println(string(CoreDump()))
+	state := CoreDump(DumpValidatorsFlag)
+
+	if !DumpToIPFSFlag {
+		fmt.Println(string(state))
+	} else {
+		url := composeIPFSUrl(HostFlag, ApiFlag)
+		hash, err := IPFSUpload(url, state, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			fmt.Println("problem sending to IPFS: %v", err)
+		}
+		fmt.Println(hash)
+	}
 }
 
 //------------------------------------------------------------------------------
