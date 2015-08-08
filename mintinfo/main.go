@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
@@ -37,108 +37,102 @@ func main() {
 	// these are defined in here so we can update the
 	// defaults with env variables first
 	var (
-		//----------------------------------------------------------------
-		// flags with env var defaults
-		nodeAddrFlag = cli.StringFlag{
-			Name:  "node-addr",
-			Usage: "set the address of the tendermint rpc server",
-			Value: DefaultNodeRPCAddr,
-		}
-
-		chainidFlag = cli.StringFlag{
-			Name:  "chainID",
-			Usage: "specify the chainID",
-			Value: DefaultChainID,
-		}
-
-		//----------------------------------------------------------------
-
-		statusCmd = cli.Command{
-			Name:   "status",
-			Usage:  "Get a node's status",
-			Action: cliStatus,
-		}
-
-		netInfoCmd = cli.Command{
-			Name:   "net-info",
-			Usage:  "Get a node's network info",
-			Action: cliNetInfo,
-		}
-
-		genesisCmd = cli.Command{
-			Name:   "genesis",
-			Usage:  "Get a node's genesis.json",
-			Action: cliGenesis,
-		}
-
-		validatorsCmd = cli.Command{
-			Name:   "validators",
-			Usage:  "List the chain's validator set",
-			Action: cliValidators,
-		}
-
-		consensusCmd = cli.Command{
-			Name:   "consensus",
-			Usage:  "Dump a node's consensus state",
-			Action: cliConsensus,
-		}
-
-		unconfirmedCmd = cli.Command{
-			Name:   "unconfirmed",
-			Usage:  "List the txs in a node's mempool",
-			Action: cliUnconfirmed,
-		}
-
-		accountsCmd = cli.Command{
-			Name:   "accounts",
-			Usage:  "List all accounts on the chain, or specify an address",
-			Action: cliAccounts,
-		}
-
-		namesCmd = cli.Command{
-			Name:   "names",
-			Usage:  "List all name reg entries on the chain",
-			Action: cliNames,
-		}
-
-		blocksCmd = cli.Command{
-			Name:   "blocks",
-			Usage:  "Get a sequence of blocks between two heights, or get a single block by height",
-			Action: cliBlocks,
-		}
-
-		storageCmd = cli.Command{
-			Name:   "storage",
-			Usage:  "Get the storage for an account, or for a particular key in that account's storage",
-			Action: cliStorage,
-		}
-
-		callCmd = cli.Command{
-			Name:   "call",
-			Usage:  "Call an address with some data",
-			Action: cliCall,
-		}
-
-		callCodeCmd = cli.Command{
-			Name:   "call-code",
-			Usage:  "Run some code on some data",
-			Action: cliCallCode,
-		}
-
-		broadcastCmd = cli.Command{
-			Name:   "broadcast",
-			Usage:  "Broadcast some tx bytes",
-			Action: cliBroadcast,
-		}
+		nodeAddrFlag string
+		chainIDFlag  string
 	)
 
-	app := cli.NewApp()
-	app.Name = "mintinfo"
-	app.Usage = "Fetch data from a tendermint node via rpc"
-	app.Version = "0.0.1"
-	app.Author = "Ethan Buchman"
-	app.Email = "ethan@erisindustries.com"
-	app.Commands = []cli.Command{
+	var statusCmd = &cobra.Command{
+		Use:   "status",
+		Short: "Get a node's status",
+		Run:   cliStatus,
+	}
+
+	var netInfoCmd = &cobra.Command{
+		Use:   "net-info",
+		Short: "Get a node's network info",
+		Run:   cliNetInfo,
+	}
+
+	var genesisCmd = &cobra.Command{
+		Use:   "genesis",
+		Short: "Get a node's genesis.json",
+		Run:   cliGenesis,
+	}
+
+	var validatorsCmd = &cobra.Command{
+		Use:   "validators",
+		Short: "List the chain's validator set",
+		Run:   cliValidators,
+	}
+
+	var consensusCmd = &cobra.Command{
+		Use:   "consensus",
+		Short: "Dump a node's consensus state",
+		Run:   cliConsensus,
+	}
+
+	var unconfirmedCmd = &cobra.Command{
+		Use:   "unconfirmed",
+		Short: "List the txs in a node's mempool",
+		Run:   cliUnconfirmed,
+	}
+
+	var accountsCmd = &cobra.Command{
+		Use:   "accounts",
+		Short: "List all accounts on the chain, or specify an address",
+		Run:   cliAccounts,
+	}
+
+	var namesCmd = &cobra.Command{
+		Use:   "names",
+		Short: "List all name reg entries on the chain",
+		Run:   cliNames,
+	}
+
+	var blocksCmd = &cobra.Command{
+		Use:   "blocks",
+		Short: "Get a sequence of blocks between two heights, or get a single block by height",
+		Run:   cliBlocks,
+	}
+
+	var storageCmd = &cobra.Command{
+		Use:   "storage",
+		Short: "Get the storage for an account, or for a particular key in that account's storage",
+		Run:   cliStorage,
+	}
+
+	var callCmd = &cobra.Command{
+		Use:   "call",
+		Short: "Call an address with some data",
+		Run:   cliCall,
+	}
+
+	var callCodeCmd = &cobra.Command{
+		Use:   "call-code",
+		Short: "Run some code on some data",
+		Run:   cliCallCode,
+	}
+
+	var broadcastCmd = &cobra.Command{
+		Use:   "broadcast",
+		Short: "Broadcast some tx bytes",
+		Run:   cliBroadcast,
+	}
+
+	var rootCmd = &cobra.Command{
+		Use:   "mintinfo",
+		Short: "Fetch data from a tendermint node via rpc",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			nodeAddr := nodeAddrFlag
+			client = cclient.NewClient(nodeAddr, REQUEST_TYPE)
+		},
+	}
+
+	// flags with env var defaults
+	rootCmd.PersistentFlags().StringVarP(&nodeAddrFlag, "node-addr", "", DefaultNodeRPCAddr, "set the address of the tendermint rpc server")
+	rootCmd.PersistentFlags().StringVarP(&chainIDFlag, "chainID", "", DefaultChainID, "specify the chainID")
+
+	rootCmd.AddCommand(
 		statusCmd,
 		netInfoCmd,
 		genesisCmd,
@@ -152,20 +146,8 @@ func main() {
 		callCmd,
 		callCodeCmd,
 		broadcastCmd,
-	}
-	app.Flags = []cli.Flag{
-		nodeAddrFlag,
-		chainidFlag,
-	}
-	app.Before = before
-
-	app.Run(os.Args)
-}
-
-func before(c *cli.Context) error {
-	nodeAddr := c.String("node-addr")
-	client = cclient.NewClient(nodeAddr, REQUEST_TYPE)
-	return nil
+	)
+	rootCmd.Execute()
 }
 
 func exit(err error) {
