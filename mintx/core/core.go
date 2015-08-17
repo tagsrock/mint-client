@@ -540,13 +540,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 				resultChan <- Msg{Error: err}
 				break
 			} else {
-				var response struct {
-					Result struct {
-						Event string            `json:"event"`
-						Data  types.EventDataTx `json:"data"`
-					} `json:"result"`
-					Error string `json:"error"`
-				}
+				var response rtypes.Response
 				err := new(error)
 				wire.ReadJSON(&response, p, err)
 				if *err != nil {
@@ -557,22 +551,36 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 					resultChan <- Msg{Error: fmt.Errorf("response error: %v", response.Error)}
 					return
 				}
-				if response.Result.Event != eid {
-					logger.Debugf("received unsolicited event! Got %s, expected %s\n", response.Result.Event, eid)
-					continue
+
+				result, ok := response.Result.(*rtypes.ResultEvent)
+				if !ok {
+					resultChan <- Msg{Error: fmt.Errorf("response error: expected result to be *rtypes.ResultEvent ")}
+					return
 				}
-				if !bytes.Equal(types.TxID(chainID, response.Result.Data.Tx), types.TxID(chainID, tx)) {
-					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, response.Result.Data.Tx))
+
+				if result.Event != eid {
+					logger.Debugf("received unsolicited event! Got %s, expected %s\n", result.Event, eid)
 					continue
 				}
 
-				if response.Result.Data.Exception != "" {
-					resultChan <- Msg{Value: response.Result.Data.Return, Exception: response.Result.Data.Exception}
+				data, ok := result.Data.(types.EventDataTx)
+				if !ok {
+					resultChan <- Msg{Error: fmt.Errorf("response error: expected result.Data to be *types.EventDataTx")}
+					return
+				}
+
+				if !bytes.Equal(types.TxID(chainID, data.Tx), types.TxID(chainID, tx)) {
+					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, data.Tx))
+					continue
+				}
+
+				if data.Exception != "" {
+					resultChan <- Msg{Value: data.Return, Exception: data.Exception}
 					return
 				}
 
 				// GOOD!
-				resultChan <- Msg{Value: response.Result.Data.Return}
+				resultChan <- Msg{Value: data.Return}
 				return
 			}
 		}
@@ -640,7 +648,7 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err2.Error())
 			return
 		}
-		if ac.Account == nil {
+		if ac == nil || ac.Account == nil {
 			err = fmt.Errorf("unknown account %X", addrBytes)
 			return
 		}
