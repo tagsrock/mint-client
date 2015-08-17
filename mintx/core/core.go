@@ -17,7 +17,6 @@ import (
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
-	rpcserver "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/server"
 	rpctypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
@@ -234,7 +233,7 @@ func (n NameGetter) GetNameRegEntry(name string) *types.NameRegEntry {
 	if err != nil {
 		panic(err)
 	}
-	return entry
+	return entry.Entry
 }
 
 /*
@@ -361,7 +360,7 @@ func Broadcast(tx types.Tx, broadcastRPC string) (*rtypes.Receipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rec, nil
+	return &rec.Receipt, nil
 }
 
 //------------------------------------------------------------------------------------
@@ -531,18 +530,6 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 		return nil, fmt.Errorf("Error subscribing to AccInput event: %v", err)
 	}
 
-	go func() {
-		pingTicker := time.NewTicker((time.Second * rpcserver.WSReadTimeoutSeconds) / 2)
-		for {
-			select {
-			case <-pingTicker.C:
-				if err := conn.WriteControl(websocket.PingMessage, []byte("whatevs"), time.Now().Add(time.Second)); err != nil {
-					logger.Debugln("error writing ping:", err)
-				}
-			}
-		}
-	}()
-
 	resultChan := make(chan Msg, 1)
 
 	// Read message
@@ -555,8 +542,8 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 			} else {
 				var response struct {
 					Result struct {
-						Event string               `json:"event"`
-						Data  types.EventMsgCallTx `json:"data"`
+						Event string            `json:"event"`
+						Data  types.EventDataTx `json:"data"`
 					} `json:"result"`
 					Error string `json:"error"`
 				}
@@ -648,17 +635,16 @@ func checkCommon(nodeAddr, pubkey, addr, amtS, nonceS string) (pub account.PubKe
 
 		// fetch nonce from node
 		client := cclient.NewClient(nodeAddr, "HTTP")
-		var ac *account.Account
-		ac, err = client.GetAccount(addrBytes)
-		if err != nil {
-			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err.Error())
+		ac, err2 := client.GetAccount(addrBytes)
+		if err2 != nil {
+			err = fmt.Errorf("Error connecting to node (%s) to fetch nonce: %s", nodeAddr, err2.Error())
 			return
 		}
-		if ac == nil {
+		if ac.Account == nil {
 			err = fmt.Errorf("unknown account %X", addrBytes)
 			return
 		}
-		nonce = int64(ac.Sequence) + 1
+		nonce = int64(ac.Account.Sequence) + 1
 	} else {
 		nonce, err = strconv.ParseInt(nonceS, 10, 64)
 		if err != nil {

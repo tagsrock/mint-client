@@ -68,7 +68,7 @@ func CoreDump(dumpval bool) []byte {
 	// get all validator infos
 	if dumpval {
 		st.GetValidatorInfos().Iterate(func(key interface{}, value interface{}) (stopped bool) {
-			vi := value.(*sm.ValidatorInfo)
+			vi := value.(*types.ValidatorInfo)
 			stJ.ValidatorInfos = append(stJ.ValidatorInfos, vi)
 			return false
 		})
@@ -126,7 +126,7 @@ func CoreRestore(chainID string, jsonBytes []byte) {
 		st.Save()
 	}
 
-	valInfos := merkle.NewIAVLTree(wire.BasicCodec, sm.ValidatorInfoCodec, 0, stateDB)
+	valInfos := merkle.NewIAVLTree(wire.BasicCodec, types.ValidatorInfoCodec, 0, stateDB)
 	for _, valInfo := range stJ.ValidatorInfos {
 		valInfos.Set(valInfo.Address, valInfo)
 	}
@@ -200,13 +200,13 @@ func cliDump(cmd *cobra.Command, args []string) {
 // types
 
 type State struct {
-	BondedValidators     *sm.ValidatorSet      `json:"bonded_validators"`
-	LastBondedValidators *sm.ValidatorSet      `json:"last_bonded_validators"`
-	UnbondingValidators  *sm.ValidatorSet      `json:"unbonding_validators"`
-	Accounts             []*acm.Account        `json:"accounts"`
-	AccountsStorage      []*AccountStorage     `json:"accounts_storage"`
-	ValidatorInfos       []*sm.ValidatorInfo   `json:"validator_infos"`
-	NameReg              []*types.NameRegEntry `json:"namereg"`
+	BondedValidators     *types.ValidatorSet    `json:"bonded_validators"`
+	LastBondedValidators *types.ValidatorSet    `json:"last_bonded_validators"`
+	UnbondingValidators  *types.ValidatorSet    `json:"unbonding_validators"`
+	Accounts             []*acm.Account         `json:"accounts"`
+	AccountsStorage      []*AccountStorage      `json:"accounts_storage"`
+	ValidatorInfos       []*types.ValidatorInfo `json:"validator_infos"`
+	NameReg              []*types.NameRegEntry  `json:"namereg"`
 }
 
 type AccountStorage struct {

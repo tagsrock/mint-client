@@ -17,6 +17,8 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
+	stypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
@@ -29,7 +31,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 	}
 	chainID := args[0]
 
-	var genDoc *state.GenesisDoc
+	var genDoc *stypes.GenesisDoc
 	var err error
 	if CsvPathFlag != "" {
 		//TODO figure out perms
@@ -95,9 +97,9 @@ func cliRandom(cmd *cobra.Command, args []string) {
 
 	// RandGenesisDoc produces random accounts and validators.
 	// Give the validators accounts:
-	genDoc.Accounts = make([]state.GenesisAccount, N)
+	genDoc.Accounts = make([]stypes.GenesisAccount, N)
 	for i, pv := range validators {
-		genDoc.Accounts[i] = state.GenesisAccount{
+		genDoc.Accounts[i] = stypes.GenesisAccount{
 			Address: pv.Address,
 			Amount:  int64(2) << 50,
 		}
@@ -140,19 +142,19 @@ func cliRandom(cmd *cobra.Command, args []string) {
 //-----------------------------------------------------------------------------
 // gendoc convenience functions
 
-func newGenDoc(chainID string, nVal, nAcc int) *state.GenesisDoc {
-	genDoc := state.GenesisDoc{
+func newGenDoc(chainID string, nVal, nAcc int) *stypes.GenesisDoc {
+	genDoc := stypes.GenesisDoc{
 		ChainID: chainID,
 	}
-	genDoc.Accounts = make([]state.GenesisAccount, nAcc)
-	genDoc.Validators = make([]state.GenesisValidator, nVal)
+	genDoc.Accounts = make([]stypes.GenesisAccount, nAcc)
+	genDoc.Validators = make([]stypes.GenesisValidator, nVal)
 	return &genDoc
 }
 
 // genesis file with only one validator, using priv_validator.json
-func genesisFromPrivValBytes(chainID string, privJSON []byte) *state.GenesisDoc {
+func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc {
 	var err error
-	privVal := wire.ReadJSON(&state.PrivValidator{}, privJSON, &err).(*state.PrivValidator)
+	privVal := wire.ReadJSON(&types.PrivValidator{}, privJSON, &err).(*types.PrivValidator)
 	if err != nil {
 		Exit(fmt.Errorf("Error reading PrivValidator on stdin: %v\n", err))
 	}
@@ -166,19 +168,19 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *state.GenesisDoc 
 	return genDoc
 }
 
-func genDocAddAccountAndValidator(genDoc *state.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, index int) {
+func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, index int) {
 	addr := pubKey.Address()
-	genDoc.Accounts[index] = state.GenesisAccount{
+	genDoc.Accounts[index] = stypes.GenesisAccount{
 		Address: addr,
 		Amount:  amt,
 		Name:    name,
 	}
-	genDoc.Validators[index] = state.GenesisValidator{
+	genDoc.Validators[index] = stypes.GenesisValidator{
 		PubKey: pubKey,
 		Amount: amt,
 		Name:   name,
-		UnbondTo: []state.BasicAccount{
-			state.BasicAccount{
+		UnbondTo: []stypes.BasicAccount{
+			stypes.BasicAccount{
 				Address: addr,
 				Amount:  amt,
 			},

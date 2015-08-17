@@ -36,8 +36,8 @@ func initTMRoot(rootDir string) {
 	// Write default config file if missing.
 	if !FileExists(configFilePath) {
 		// Ask user for moniker
-		moniker := cfg.Prompt("Type hostname: ", "anonymous")
-		MustWriteFile(configFilePath, []byte(defaultConfig(moniker)))
+		// moniker := cfg.Prompt("Type hostname: ", "anonymous")
+		MustWriteFile(configFilePath, []byte(defaultConfig("anonymous")))
 	}
 	if !FileExists(genesisFilePath) {
 		MustWriteFile(genesisFilePath, []byte(defaultGenesis))
@@ -69,6 +69,7 @@ func GetConfig(rootDir string) cfg.Config {
 	mapConfig.SetDefault("moniker", "anonymous")
 	mapConfig.SetDefault("node_laddr", "0.0.0.0:36656")
 	mapConfig.SetDefault("fast_sync", false)
+	mapConfig.SetDefault("skip_upnp", true)
 	mapConfig.SetDefault("addrbook_file", rootDir+"/addrbook.json")
 	mapConfig.SetDefault("priv_validator_file", rootDir+"/priv_validator.json")
 	mapConfig.SetDefault("db_backend", "memdb")
