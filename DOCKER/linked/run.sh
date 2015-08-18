@@ -78,11 +78,12 @@ GENESIS=`docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_client b
 done
 echo "genesis $GENESIS"
 
-# copy in the config.toml
-cat config1.toml | docker run --rm --volumes-from mct_tendermint-data_1 -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
+# make the config.toml
+
+mintconfig --moniker="test_mon" | docker run --rm --volumes-from mct_tendermint-data_1 -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
 for ((i=2; i<=$NUM_NODES; i++ ))
 do	
-cat config2.toml | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
+mintconfig --moniker="test_nom" --seeds="mct_tendermint_1:46656" | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
 done
 #------------------------------------------------------------------
 # start tendermint

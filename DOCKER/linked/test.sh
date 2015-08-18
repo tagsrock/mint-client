@@ -10,7 +10,7 @@ export MINTX_PUBKEY=$PUBKEYS
 # check the chain id
 STATUS=`mintinfo status`
 CHAIN_ID2=`echo $STATUS | jq .[1].node_info.chain_id`
-echo "status one $I $STATUS"
+echo "status $STATUS"
 CHAIN_ID2=$(echo "$CHAIN_ID2" | tr -d '"') # remove surrounding quotes
 echo "chain id $CHAIN_ID2"
 
@@ -34,7 +34,7 @@ fi
 sleep 10
 
 STATUS=`mintinfo status`
-echo "status two $I $STATUS"
+echo "status $STATUS"
 
 # verify the name reg entry
 
@@ -56,7 +56,7 @@ CODE="600560005260206000F3"
 EXPECT="5"
 MINTX_OUTPUT=`mintx --debug call --to "" --data $CODE --amt 10 --fee 0 --gas 1000 --sign --broadcast --wait`
 EXIT=$?
-echo "$I $MINTX_OUTPUT"
+echo "$MINTX_OUTPUT"
 if [ $EXIT -gt 0 ]; then
 	echo "Failed to send mint transaction"
 	exit 1
