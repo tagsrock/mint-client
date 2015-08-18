@@ -16,6 +16,7 @@ import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	stypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
@@ -34,8 +35,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 	var genDoc *stypes.GenesisDoc
 	var err error
 	if CsvPathFlag != "" {
-		//TODO figure out perms
-		pubkeys, amts, names, _ := parseCsv(CsvPathFlag)
+		pubkeys, amts, names, perms := parseCsv(CsvPathFlag)
 
 		// convert amts to ints
 		amt := make([]int64, len(amts))
@@ -51,7 +51,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 
 		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], i)
+			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], i)
 		}
 
 	} else if PubkeyFlag != "" {
@@ -61,7 +61,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 
 		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt, "", i)
+			genDocAddAccountAndValidator(genDoc, pk, amt, "", 0, i)
 		}
 
 	} else {
@@ -163,17 +163,23 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc
 
 	genDoc := newGenDoc(chainID, 1, 1)
 
-	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0)
+	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0, 0)
 
 	return genDoc
 }
 
-func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, index int) {
+func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perms, index int) {
 	addr := pubKey.Address()
 	genDoc.Accounts[index] = stypes.GenesisAccount{
 		Address: addr,
 		Amount:  amt,
 		Name:    name,
+		Permissions: &ptypes.AccountPermissions{
+			Base: ptypes.BasePermissions{
+				Perms:  ptypes.PermFlag(perms),
+				SetBit: ptypes.PermFlag(perms),
+			},
+		},
 	}
 	genDoc.Validators[index] = stypes.GenesisValidator{
 		PubKey: pubKey,
@@ -224,7 +230,7 @@ func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
 }
 
 //takes a csv in the format defined [here]
-func parseCsv(path string) (pubkeys, amts, names, perms []string) {
+func parseCsv(path string) (pubkeys, amts, names []string, perms []int) {
 
 	csvFile, err := os.Open(path)
 	if err != nil {
@@ -244,13 +250,22 @@ func parseCsv(path string) (pubkeys, amts, names, perms []string) {
 	pubkeys = make([]string, len(params))
 	amts = make([]string, len(params))
 	names = make([]string, len(params))
-	perms = make([]string, len(params))
+	permsS := make([]string, len(params))
 	for i, each := range params {
 		pubkeys[i] = each[0]
 		amts[i] = each[1]
 		names[i] = each[2]
-		perms[i] = each[3]
+		permsS[i] = each[3]
 
+	}
+
+	//TODO convert int to uint64, see issue #25
+	perms = make([]int, len(permsS))
+	for i, perm := range permsS {
+		perms[i], err = strconv.Atoi(perm)
+		if err != nil {
+			Exit(fmt.Errorf("Permissions must be an integer of *this* format"))
+		}
 	}
 	return pubkeys, amts, names, perms
 }
