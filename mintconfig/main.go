@@ -26,8 +26,8 @@ func main() {
 	}
 
 	rootCmd.Flags().StringVarP(&moniker, "moniker", "", "golden_goose", "A moniker for your node. Nice to have but not necessary")
-	rootCmd.Flags().StringVarP(&nodeAddr, "node-addr", "", "0.0.0.0:46656", "The p2p listening addr for your node")
-	rootCmd.Flags().StringVarP(&rpcAddr, "rpc-addr", "", "0.0.0.0:46657", "The RPC listening addr for your node")
+	rootCmd.Flags().StringVarP(&nodeAddr, "p2p", "", "0.0.0.0:46656", "The p2p listening addr for your node")
+	rootCmd.Flags().StringVarP(&rpcAddr, "rpc", "", "0.0.0.0:46657", "The RPC listening addr for your node")
 	rootCmd.Flags().StringVarP(&seeds, "seeds", "", "", "A seed address for instantiating new nodes")
 
 	rootCmd.Flags().BoolVarP(&fast_sync, "fast-sync", "", false, "Catch up to an existing chain (true) or run the consensus protocol (false)")
