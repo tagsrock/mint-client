@@ -7,11 +7,9 @@ import (
 )
 
 var (
-	DirFlag    string
-	PubkeyFlag string
+	DirFlag string
 	//AddrsFlag  string
 	CsvPathFlag string
-	SeedsFlag   string
 )
 
 func main() {
@@ -21,9 +19,9 @@ func main() {
 		Short: "check mintgen version",
 		Run: func(cmd *cobra.Command, args []string) {
 			// major: alpha
-			// minor: csvs, known
+			// minor: drop pub, csvs with empty fields, no config
 			// revision:
-			fmt.Println("0.2.0")
+			fmt.Println("0.3.0")
 		},
 	}
 
@@ -42,12 +40,9 @@ func main() {
 	}
 
 	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in. Default is ~/.eris/data/<chain_id>")
-	randomCmd.Flags().StringVarP(&SeedsFlag, "seeds", "", "", "address for seeding nodes")
 
-	knownCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
 	knownCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
-	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions)")
-	knownCmd.Flags().StringVarP(&SeedsFlag, "seeds", "", "", "address for seeding nodes")
+	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
 
 	var rootCmd = &cobra.Command{
 		Use:   "mintgen",
