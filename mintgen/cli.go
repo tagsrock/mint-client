@@ -30,18 +30,44 @@ func cliKnown(cmd *cobra.Command, args []string) {
 		Exit(fmt.Errorf("Enter a chain_id"))
 	}
 	chainID := args[0]
+	genesisBytes, err := coreKnown(chainID, CsvPathFlag)
+	IfExit(err)
+	fmt.Println(string(genesisBytes))
+}
 
+func cliRandom(cmd *cobra.Command, args []string) {
+	if len(args) < 2 {
+		Exit(fmt.Errorf("Enter the number of validators and a chain_id"))
+	}
+
+	N, err := strconv.Atoi(args[0])
+	if err != nil {
+		Exit(fmt.Errorf("Please provide an integer number of validators to create"))
+	}
+
+	chainID := args[1]
+
+	_, _, err = coreRandom(N, chainID)
+	IfExit(err)
+	// XXX: should we just output the genesis here instead?
+	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", DirFlag)
+}
+
+//------------------------------------------------------------------------------------
+// core functions
+
+func coreKnown(chainID, csvFile string) ([]byte, error) {
 	var genDoc *stypes.GenesisDoc
 	var err error
-	if CsvPathFlag != "" {
-		pubkeys, amts, names, perms, setbits := parseCsv(CsvPathFlag)
+	// either we pass the name of a csv file or we read a priv_validator over stdin
+	if csvFile != "" {
+		pubkeys, amts, names, perms, setbits := parseCsv(csvFile)
 
 		// convert amts to ints
 		amt := make([]int64, len(amts))
 		for i, a := range amts {
-			amt[i], err = strconv.ParseInt(a, 10, 64)
-			if err != nil {
-				Exit(fmt.Errorf("Invalid amount: %v", err))
+			if amt[i], err = strconv.ParseInt(a, 10, 64); err != nil {
+				return nil, fmt.Errorf("Invalid amount: %v", err)
 			}
 		}
 
@@ -59,34 +85,27 @@ func cliKnown(cmd *cobra.Command, args []string) {
 
 	buf, buf2, n := new(bytes.Buffer), new(bytes.Buffer), new(int64)
 	wire.WriteJSON(genDoc, buf, n, &err)
-	IfExit(err)
-	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Indent(buf2, buf.Bytes(), "", "\t"); err != nil {
+		return nil, err
+	}
 	genesisBytes := buf2.Bytes()
 
-	fmt.Println(string(genesisBytes))
+	return genesisBytes, nil
 }
 
-func cliRandom(cmd *cobra.Command, args []string) {
-	if len(args) < 2 {
-		Exit(fmt.Errorf("Enter the number of validators and a chain_id"))
-	}
-
-	N, err := strconv.Atoi(args[0])
-	if err != nil {
-		Exit(fmt.Errorf("Please provide an integer number of validators to create"))
-	}
-
-	chainID := args[1]
-
+func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
 	fmt.Println("Generating accounts ...")
-	genDoc, _, validators := state.RandGenesisDoc(N, true, 100000, N, false, 1000)
+	genDoc, _, privVals := state.RandGenesisDoc(N, true, 100000, N, false, 1000)
 
 	genDoc.ChainID = chainID
 
 	// RandGenesisDoc produces random accounts and validators.
 	// Give the validators accounts:
 	genDoc.Accounts = make([]stypes.GenesisAccount, N)
-	for i, pv := range validators {
+	for i, pv := range privVals {
 		genDoc.Accounts[i] = stypes.GenesisAccount{
 			Address: pv.Address,
 			Amount:  int64(2) << 50,
@@ -95,34 +114,52 @@ func cliRandom(cmd *cobra.Command, args []string) {
 
 	buf, buf2, n := new(bytes.Buffer), new(bytes.Buffer), new(int64)
 	wire.WriteJSON(genDoc, buf, n, &err)
-	IfExit(err)
-	IfExit(json.Indent(buf2, buf.Bytes(), "", "\t"))
-	genesisBytes := buf2.Bytes()
+	if err != nil {
+		return
+	}
+	if err = json.Indent(buf2, buf.Bytes(), "", "\t"); err != nil {
+		return
+	}
+	genesisBytes = buf2.Bytes()
 
 	// create directory to save priv validators and genesis.json
 	if DirFlag == "" {
 		DirFlag = path.Join(DataContainersPath, chainID)
 	}
-	if _, err := os.Stat(DirFlag); err != nil {
-		IfExit(os.MkdirAll(DirFlag, 0700))
-	}
-
-	for i, v := range validators {
-		buf, n = new(bytes.Buffer), new(int64)
-		wire.WriteJSON(v, buf, n, &err)
-		IfExit(err)
-		valBytes := buf.Bytes()
-		if len(validators) > 1 {
-			mulDir := fmt.Sprintf("%s_%d", DirFlag, i)
-			IfExit(os.MkdirAll(mulDir, 0700))
-			IfExit(ioutil.WriteFile(path.Join(mulDir, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(mulDir, "genesis.json"), genesisBytes, 0644))
-		} else {
-			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
+	if _, err = os.Stat(DirFlag); err != nil {
+		if err = os.MkdirAll(DirFlag, 0700); err != nil {
+			return
 		}
 	}
-	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", DirFlag)
+
+	for i, v := range privVals {
+		buf, n = new(bytes.Buffer), new(int64)
+		wire.WriteJSON(v, buf, n, &err)
+		if err != nil {
+			return
+		}
+		valBytes := buf.Bytes()
+		if len(privVals) > 1 {
+			mulDir := path.Join(DirFlag, fmt.Sprintf("%s_%d", chainID, i))
+			if err = os.MkdirAll(mulDir, 0700); err != nil {
+				return
+			}
+			if err = ioutil.WriteFile(path.Join(mulDir, "priv_validator.json"), valBytes, 0600); err != nil {
+				return
+			}
+			if err = ioutil.WriteFile(path.Join(mulDir, "genesis.json"), genesisBytes, 0644); err != nil {
+				return
+			}
+		} else {
+			if err = ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600); err != nil {
+				return
+			}
+			if err = ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644); err != nil {
+				return
+			}
+		}
+	}
+	return
 }
 
 //-----------------------------------------------------------------------------
@@ -196,9 +233,12 @@ func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
 	return pubKeys
 }
 
+// empty is over written
 func ifExistsElse(list []string, index int, defaultValue string) string {
 	if len(list) > index {
-		return list[index]
+		if list[index] != "" {
+			return list[index]
+		}
 	}
 	return defaultValue
 }
@@ -210,7 +250,7 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []ptyp
 	if err != nil {
 		Exit(fmt.Errorf("Couldn't open file: %s: %v", path, err))
 	}
-	csvFile.Close()
+	defer csvFile.Close()
 
 	r := csv.NewReader(csvFile)
 	//r.FieldsPerRecord = # of records expected
