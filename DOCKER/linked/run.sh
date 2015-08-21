@@ -29,7 +29,7 @@ done
 echo "******** RUNNING KEYS DAEMON ************"
 # run eris-keys, generate a key, get pubkey
 
-for ((i=1; i<=$NUM_NODES; i++)) #MINTX_SIGN_PORT=4767; MINTX_SIGN_PORT++
+for ((i=1; i<=$NUM_NODES; i++)) 
 do
 docker run --name mct_keys"_"$i --volumes-from mct_keys-data"_"$i -d mct_keys
 ADDR=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys"_"$i eris-keys gen`
@@ -57,7 +57,7 @@ echo "chain_id $CHAIN_ID"
 # This step can be eliminated once tendermint can use eris-keys for signing
 # NOTE: I tried and failed to do this through an ENV var, so resorted to saving (and removing) priv_validator.json on the host ...
 for ((i=1; i<=$NUM_NODES; i++ ))
-do #make addr proper
+do
 docker run --rm --volumes-from mct_keys-data"_"$i -t mct_client mintkey mint ${ADDRS[$i]} > priv_validator.json
 cat priv_validator.json | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/priv_validator.json"
 rm priv_validator.json
@@ -109,7 +109,7 @@ echo "******** INITIALIZING TESTS ************"
 for ((i=1; i<=$NUM_NODES; i++ ))
 do	
 # run the test commands in mint-client container linked to eris-keys and tendermint
-docker run --name mct_client_test"_"$i -d --link mct_keys"_"$i:keys --link mct_tendermint"_"$i:tendermint -e "CHAIN_ID=$CHAIN_ID" -e "PUBKEYS=${PUBKEYS[$i]}" -e "I=$i" -e "NUM_NODES=$NUM_NODES" -t mct_client
+docker run --name mct_client_test"_"$i -d --link mct_keys"_"$i:keys --link mct_tendermint"_"$i:tendermint -e "CHAIN_ID=$CHAIN_ID" -e "PUBKEY=${PUBKEYS[$i]}" -e "I=$i" -e "NUM_NODES=$NUM_NODES" -t mct_client
 done
 
 #stdout logs
