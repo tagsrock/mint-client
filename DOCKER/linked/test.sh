@@ -24,14 +24,14 @@ echo "******** RUNNING TEST: NameTx_$I ************"
 # create a namereg entry
 REG_NAME="artifact"
 REG_DATA="blue"
-mintx --debug name --name $REG_NAME"_"$I --data $REG_DATA"_"$I --amt 1000 --fee 0 --sign --broadcast
+mintx --debug name --name $REG_NAME"_"$I --data $REG_DATA"_"$I --amt 1000 --fee 0 --sign --broadcast --wait
 EXIT=$?
 if [ $EXIT -gt 0 ]; then
 	echo "Failed to send mint transaction"
 	exit 1
 fi
 
-sleep 10
+#sleep 10
 
 STATUS=`mintinfo status`
 echo "status $STATUS"

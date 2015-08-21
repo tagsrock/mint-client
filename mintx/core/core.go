@@ -537,6 +537,11 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 				continue
 			}
 
+			// we don't accept events unless they came after a new block (ie. in)
+			if latestBlockHash == nil {
+				continue
+			}
+
 			if result.Event != eid {
 				logger.Debugf("received unsolicited event! Got %s, expected %s\n", result.Event, eid)
 				continue

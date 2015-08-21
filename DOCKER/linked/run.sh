@@ -32,11 +32,11 @@ echo "******** RUNNING KEYS DAEMON ************"
 for ((i=1; i<=$NUM_NODES; i++)) 
 do
 docker run --name mct_keys"_"$i --volumes-from mct_keys-data"_"$i -d mct_keys
-ADDR=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys"_"$i eris-keys gen`
+ADDR=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys eris-keys gen`
 # ADDR has an extra character. trim it
 ADDRS[$i]=${ADDR%?}
 echo "addr_$i ${ADDRS[$i]}"
-PUBKEY=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys"_"$i eris-keys pub --addr ${ADDRS[$i]}`
+PUBKEY=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys eris-keys pub --addr ${ADDRS[$i]}`
 PUBKEYS[$i]=${PUBKEY%?}
 echo "pubkey_$i ${PUBKEYS[$i]}"
 done
@@ -73,7 +73,7 @@ for ((i=1; i<=$NUM_NODES; i++ ))
 do	
 
 pks="${PUBKEYS[@]}"
-docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_client bash -c "mintgen known --pub=\"$pks\" --seeds=\"mct_tendermint_1\" $CHAIN_ID > $TMROOT/genesis.json"
+docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_client bash -c "mintgen known --pub=\"$pks\" $CHAIN_ID > $TMROOT/genesis.json"
 GENESIS=`docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_client bash -c "cat $TMROOT/genesis.json"`
 done
 echo "genesis $GENESIS"

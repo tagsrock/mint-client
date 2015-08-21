@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
@@ -30,7 +31,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 		Exit(fmt.Errorf("Enter a chain_id"))
 	}
 	chainID := args[0]
-	genesisBytes, err := coreKnown(chainID, CsvPathFlag)
+	genesisBytes, err := coreKnown(chainID, CsvPathFlag, PubkeyFlag)
 	IfExit(err)
 	fmt.Println(string(genesisBytes))
 }
@@ -56,7 +57,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 //------------------------------------------------------------------------------------
 // core functions
 
-func coreKnown(chainID, csvFile string) ([]byte, error) {
+func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 	var genDoc *stypes.GenesisDoc
 	var err error
 	// either we pass the name of a csv file or we read a priv_validator over stdin
@@ -77,6 +78,15 @@ func coreKnown(chainID, csvFile string) ([]byte, error) {
 		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
 			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], setbits[i], i)
+		}
+	} else if pubKeys != "" {
+		pubkeys := strings.Split(pubKeys, " ")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
+		for i, pk := range pubKeys {
+			genDocAddAccountAndValidator(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
 		}
 	} else {
 		privJSON := readStdinTimeout()
