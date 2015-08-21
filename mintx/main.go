@@ -174,6 +174,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				amtFlag,
 				toFlag,
@@ -195,6 +196,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				amtFlag,
 				nameFlag,
@@ -244,6 +246,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				amtFlag,
 				unbondtoFlag,
@@ -263,6 +266,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				addrFlag,
 				heightFlag,
@@ -281,6 +285,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 
 				addrFlag,
 				heightFlag,
@@ -301,6 +306,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 				nonceFlag,
 			},
 		}
@@ -318,6 +324,7 @@ func main() {
 
 				signFlag,
 				broadcastFlag,
+				waitFlag,
 			},
 		}
 
@@ -349,7 +356,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "mintx"
 	app.Usage = "Create and broadcast tendermint txs"
-	app.Version = "0.0.2" // move core funcs to own lib
+	app.Version = "0.1.0" // add --wait to everything, return block hash
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
 	app.Before = before

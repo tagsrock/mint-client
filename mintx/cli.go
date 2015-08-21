@@ -134,6 +134,7 @@ func unpackSignAndBroadcast(result *core.TxResult, err error) {
 		// if we don't provide --sign or --broadcast
 		return
 	}
+	fmt.Printf("Block Hash: %X\n", result.BlockHash)
 	fmt.Printf("Transaction Hash: %X\n", result.Hash)
 	if result.Return != nil {
 		fmt.Printf("Return Value: %X\n", result.Return)
