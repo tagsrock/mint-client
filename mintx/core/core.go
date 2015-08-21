@@ -11,15 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/gorilla/websocket"
-
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	rtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
-	rpctypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 //------------------------------------------------------------------------------------
@@ -438,7 +434,8 @@ func signTx(signAddr, chainID string, tx_ types.Tx) ([]byte, types.Tx, error) {
 }
 
 type TxResult struct {
-	Hash []byte // all txs get a hash
+	BlockHash []byte // all txs get in a block
+	Hash      []byte // all txs get a hash
 
 	// only CallTx
 	Address   []byte // only for new contracts
@@ -476,6 +473,7 @@ func SignAndBroadcast(chainID, nodeAddr, signAddr string, tx types.Tx, sign, bro
 						logger.Infof("Encountered error waiting for event: %v\n", msg.Error)
 						err = msg.Error
 					} else {
+						txResult.BlockHash = msg.BlockHash
 						txResult.Return = msg.Value
 						txResult.Exception = msg.Exception
 					}
@@ -503,6 +501,7 @@ func SignAndBroadcast(chainID, nodeAddr, signAddr string, tx types.Tx, sign, bro
 // wait for events
 
 type Msg struct {
+	BlockHash []byte
 	Value     []byte
 	Exception string
 	Error     error
@@ -513,76 +512,60 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 	wsAddr := strings.TrimPrefix(nodeAddr, "http://")
 	wsAddr = "ws://" + wsAddr + "websocket"
 	logger.Debugln(wsAddr)
-	dialer := websocket.DefaultDialer
-	rHeader := http.Header{}
-	conn, _, err := dialer.Dial(wsAddr, rHeader)
-	if err != nil {
-		return nil, fmt.Errorf("Error establishing websocket connection to wait for tx to get committed: %v", err)
-	}
+	wsClient := cclient.NewWSClient(wsAddr)
+	wsClient.Start()
 	eid := types.EventStringAccInput(inputAddr)
-
-	if err := conn.WriteJSON(rpctypes.RPCRequest{
-		JSONRPC: "2.0",
-		Id:      "",
-		Method:  "subscribe",
-		Params:  []interface{}{eid},
-	}); err != nil {
+	if err := wsClient.Subscribe(eid); err != nil {
 		return nil, fmt.Errorf("Error subscribing to AccInput event: %v", err)
+	}
+	if err := wsClient.Subscribe(types.EventStringNewBlock()); err != nil {
+		return nil, fmt.Errorf("Error subscribing to NewBlock event: %v", err)
 	}
 
 	resultChan := make(chan Msg, 1)
 
+	var latestBlockHash []byte
+
 	// Read message
 	go func() {
 		for {
-			_, p, err := conn.ReadMessage()
-			if err != nil {
-				resultChan <- Msg{Error: err}
-				break
-			} else {
-				var response rtypes.Response
-				err := new(error)
-				wire.ReadJSON(&response, p, err)
-				if *err != nil {
-					resultChan <- Msg{Error: fmt.Errorf("error unmarshaling event data: %v", *err)}
-					return
-				}
-				if response.Error != "" {
-					resultChan <- Msg{Error: fmt.Errorf("response error: %v", response.Error)}
-					return
-				}
+			result := <-wsClient.EventsCh
+			// if its a block, remember the block hash
+			blockData, ok := result.Data.(types.EventDataNewBlock)
+			if ok {
+				latestBlockHash = blockData.Block.Hash()
+				continue
+			}
 
-				result, ok := response.Result.(*rtypes.ResultEvent)
-				if !ok {
-					resultChan <- Msg{Error: fmt.Errorf("response error: expected result to be *rtypes.ResultEvent ")}
-					return
-				}
+			// we don't accept events unless they came after a new block (ie. in)
+			if latestBlockHash == nil {
+				continue
+			}
 
-				if result.Event != eid {
-					logger.Debugf("received unsolicited event! Got %s, expected %s\n", result.Event, eid)
-					continue
-				}
+			if result.Event != eid {
+				logger.Debugf("received unsolicited event! Got %s, expected %s\n", result.Event, eid)
+				continue
+			}
 
-				data, ok := result.Data.(types.EventDataTx)
-				if !ok {
-					resultChan <- Msg{Error: fmt.Errorf("response error: expected result.Data to be *types.EventDataTx")}
-					return
-				}
-
-				if !bytes.Equal(types.TxID(chainID, data.Tx), types.TxID(chainID, tx)) {
-					logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, data.Tx))
-					continue
-				}
-
-				if data.Exception != "" {
-					resultChan <- Msg{Value: data.Return, Exception: data.Exception}
-					return
-				}
-
-				// GOOD!
-				resultChan <- Msg{Value: data.Return}
+			data, ok := result.Data.(types.EventDataTx)
+			if !ok {
+				resultChan <- Msg{Error: fmt.Errorf("response error: expected result.Data to be *types.EventDataTx")}
 				return
 			}
+
+			if !bytes.Equal(types.TxID(chainID, data.Tx), types.TxID(chainID, tx)) {
+				logger.Debugf("Received event for same input from another transaction: %X\n", types.TxID(chainID, data.Tx))
+				continue
+			}
+
+			if data.Exception != "" {
+				resultChan <- Msg{BlockHash: latestBlockHash, Value: data.Return, Exception: data.Exception}
+				return
+			}
+
+			// GOOD!
+			resultChan <- Msg{BlockHash: latestBlockHash, Value: data.Return}
+			return
 		}
 	}()
 
