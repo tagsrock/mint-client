@@ -30,51 +30,32 @@ rpc_laddr = "%s"`, moniker, nodeAddr, seeds, fast_sync, db_backend, log_level, r
 
 }
 
-func checkFlags(node, seeds, db, log, rpc string, sync bool) {
-
-	if node != "" {
-		p := strings.Split(node, ":")
+func validateAddress(name, address string) {
+	if address != "" {
+		p := strings.Split(address, ":")
 		if len(p) != 2 {
-			Exit(fmt.Errorf("--p2p requires a port"))
+			Exit(fmt.Errorf("--%s should be <host>:<port>", name))
 		}
-		_, err := strconv.Atoi(p[1])
-		if err != nil {
-			Exit(fmt.Errorf("specified port must be number"))
-		}
-	}
-
-	if rpc != "" {
-		r := strings.Split(rpc, ":")
-		if len(r) != 2 {
-			Exit(fmt.Errorf("--rpc requires a port"))
-		}
-		_, err := strconv.Atoi(r[1])
-		if err != nil {
-			Exit(fmt.Errorf("specified port must be number"))
+		if _, err := strconv.Atoi(p[1]); err != nil {
+			Exit(fmt.Errorf("specified --%s port must be an integer", name))
 		}
 	}
+}
 
-	if seeds != "" {
-		s := strings.Split(seeds, ":")
-		if len(s) != 2 {
-			Exit(fmt.Errorf("--seeds requires a port"))
-		}
-		_, err := strconv.Atoi(s[1])
-		if err != nil {
-			Exit(fmt.Errorf("specified port must be number"))
+func validateValueInList(name, value string, acceptedValues []string) {
+	for _, v := range acceptedValues {
+		if value == v {
+			return
 		}
 	}
+	Exit(fmt.Errorf("--%s must be one of %v", name, acceptedValues))
+}
 
-	if sync != true && sync != false {
-		Exit(fmt.Errorf("--fast-sync must be true or false"))
-	}
+func checkFlags(node, seeds, db, log, rpc string, sync bool) {
+	validateAddress("p2p", node)
+	validateAddress("rpc", rpc)
+	validateAddress("seeds", seeds)
 
-	if db != "memdb" && db != "leveldb" {
-		Exit(fmt.Errorf("--db must be either leveldb or memdb"))
-	}
-
-	if log != "error" && log != "warn" && log != "notice" && log != "info" && log != "debug" {
-		Exit(fmt.Errorf("--log must be one of: error, warn, notice, info, debug"))
-	}
-
+	validateValueInList("db", db, []string{"memdb", "leveldb"})
+	validateValueInList("log", log, []string{"error", "warn", "notice", "info", "debug"})
 }
