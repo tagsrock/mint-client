@@ -35,7 +35,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 	var genDoc *stypes.GenesisDoc
 	var err error
 	if CsvPathFlag != "" {
-		pubkeys, amts, names, perms := parseCsv(CsvPathFlag)
+		pubkeys, amts, names, perms, setbits := parseCsv(CsvPathFlag)
 
 		// convert amts to ints
 		amt := make([]int64, len(amts))
@@ -51,7 +51,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 
 		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], i)
+			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], setbits[i], i)
 		}
 
 	} else if PubkeyFlag != "" {
@@ -61,7 +61,7 @@ func cliKnown(cmd *cobra.Command, args []string) {
 
 		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt, "", 0, i)
+			genDocAddAccountAndValidator(genDoc, pk, amt, "", 0, 0, i)
 		}
 
 	} else {
@@ -163,12 +163,12 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc
 
 	genDoc := newGenDoc(chainID, 1, 1)
 
-	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0, 0)
+	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0, 0, 0)
 
 	return genDoc
 }
 
-func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perms, index int) {
+func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit, index int) {
 	addr := pubKey.Address()
 	genDoc.Accounts[index] = stypes.GenesisAccount{
 		Address: addr,
@@ -176,8 +176,8 @@ func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubK
 		Name:    name,
 		Permissions: &ptypes.AccountPermissions{
 			Base: ptypes.BasePermissions{
-				Perms:  ptypes.PermFlag(perms),
-				SetBit: ptypes.PermFlag(perms),
+				Perms:  ptypes.PermFlag(perm),
+				SetBit: ptypes.PermFlag(setbit),
 			},
 		},
 	}
@@ -230,7 +230,7 @@ func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
 }
 
 //takes a csv in the format defined [here]
-func parseCsv(path string) (pubkeys, amts, names []string, perms []int) {
+func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []int) {
 
 	csvFile, err := os.Open(path)
 	if err != nil {
@@ -251,12 +251,13 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms []int) {
 	amts = make([]string, len(params))
 	names = make([]string, len(params))
 	permsS := make([]string, len(params))
+	setbitS := make([]string, len(params))
 	for i, each := range params {
 		pubkeys[i] = each[0]
 		amts[i] = each[1]
 		names[i] = each[2]
 		permsS[i] = each[3]
-
+		setbitS[i] = each[4]
 	}
 
 	//TODO convert int to uint64, see issue #25
@@ -267,7 +268,14 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms []int) {
 			Exit(fmt.Errorf("Permissions must be an integer of *this* format"))
 		}
 	}
-	return pubkeys, amts, names, perms
+	setbits = make([]int, len(setbitS))
+	for i, setbit := range setbitS {
+		setbits[i], err = strconv.Atoi(setbit)
+		if err != nil {
+			Exit(fmt.Errorf("SetBits must be an integer of *this* format"))
+		}
+	}
+	return pubkeys, amts, names, perms, setbits
 }
 
 const stdinTimeoutSeconds = 1

@@ -46,7 +46,7 @@ func main() {
 
 	knownCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
 	knownCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis.json in. Default is ~/.eris/data/<chain_id>")
-	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions)")
+	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
 	knownCmd.Flags().StringVarP(&SeedsFlag, "seeds", "", "", "address for seeding nodes")
 
 	var rootCmd = &cobra.Command{
