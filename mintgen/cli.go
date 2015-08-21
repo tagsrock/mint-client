@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
@@ -53,17 +52,6 @@ func cliKnown(cmd *cobra.Command, args []string) {
 		for i, pk := range pubKeys {
 			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], setbits[i], i)
 		}
-
-	} else if PubkeyFlag != "" {
-		pubkeys := strings.Split(PubkeyFlag, " ")
-		amt := int64(1) << 50
-		pubKeys := pubKeyStringsToPubKeys(pubkeys)
-
-		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
-		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt, "", 0, 0, i)
-		}
-
 	} else {
 		privJSON := readStdinTimeout()
 		genDoc = genesisFromPrivValBytes(chainID, privJSON)
@@ -128,15 +116,13 @@ func cliRandom(cmd *cobra.Command, args []string) {
 			mulDir := fmt.Sprintf("%s_%d", DirFlag, i)
 			IfExit(os.MkdirAll(mulDir, 0700))
 			IfExit(ioutil.WriteFile(path.Join(mulDir, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(mulDir, "config.toml"), []byte(setDefaultConfig(i, chainID, SeedsFlag)), 0644))
 			IfExit(ioutil.WriteFile(path.Join(mulDir, "genesis.json"), genesisBytes, 0644))
 		} else {
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "priv_validator.json"), valBytes, 0600))
-			IfExit(ioutil.WriteFile(path.Join(DirFlag, "config.toml"), []byte(setDefaultConfig(i, chainID, SeedsFlag)), 0644))
 			IfExit(ioutil.WriteFile(path.Join(DirFlag, "genesis.json"), genesisBytes, 0644))
 		}
 	}
-	fmt.Printf("config.toml, genesis.json and priv_validator.json files saved in %s\n", DirFlag)
+	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", DirFlag)
 }
 
 //-----------------------------------------------------------------------------
@@ -163,12 +149,12 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc
 
 	genDoc := newGenDoc(chainID, 1, 1)
 
-	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", 0, 0, 0)
+	genDocAddAccountAndValidator(genDoc, pubKey, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, 0)
 
 	return genDoc
 }
 
-func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit, index int) {
+func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
 	addr := pubKey.Address()
 	genDoc.Accounts[index] = stypes.GenesisAccount{
 		Address: addr,
@@ -176,8 +162,8 @@ func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubK
 		Name:    name,
 		Permissions: &ptypes.AccountPermissions{
 			Base: ptypes.BasePermissions{
-				Perms:  ptypes.PermFlag(perm),
-				SetBit: ptypes.PermFlag(setbit),
+				Perms:  perm,
+				SetBit: setbit,
 			},
 		},
 	}
@@ -197,25 +183,6 @@ func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubK
 //-----------------------------------------------------------------------------
 // util functions
 
-func setDefaultConfig(num int, mon, seeds string) []byte {
-	//build moniker
-	moniker := fmt.Sprintf("%s_%d", mon, num)
-	var defaultConfig = fmt.Sprintf(`
-# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
-
-moniker = "%s"
-node_laddr = "0.0.0.0:46656"
-seeds = "%s"
-fast_sync = false
-db_backend = "leveldb"
-log_level = "debug"
-rpc_laddr = "0.0.0.0:46657"
-`, moniker, seeds)
-
-	return []byte(defaultConfig)
-}
-
 // convert hex strings to ed25519 pubkeys
 func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
 	pubKeys := make([]account.PubKeyEd25519, len(pubkeys))
@@ -229,15 +196,21 @@ func pubKeyStringsToPubKeys(pubkeys []string) []account.PubKeyEd25519 {
 	return pubKeys
 }
 
+func ifExistsElse(list []string, index int, defaultValue string) string {
+	if len(list) > index {
+		return list[index]
+	}
+	return defaultValue
+}
+
 //takes a csv in the format defined [here]
-func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []int) {
+func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []ptypes.PermFlag) {
 
 	csvFile, err := os.Open(path)
 	if err != nil {
 		Exit(fmt.Errorf("Couldn't open file: %s: %v", path, err))
 	}
-
-	defer csvFile.Close()
+	csvFile.Close()
 
 	r := csv.NewReader(csvFile)
 	//r.FieldsPerRecord = # of records expected
@@ -254,26 +227,28 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []int)
 	setbitS := make([]string, len(params))
 	for i, each := range params {
 		pubkeys[i] = each[0]
-		amts[i] = each[1]
-		names[i] = each[2]
-		permsS[i] = each[3]
-		setbitS[i] = each[4]
+		amts[i] = ifExistsElse(each, 1, "1000")
+		names[i] = ifExistsElse(each, 2, "")
+		permsS[i] = ifExistsElse(each, 3, fmt.Sprintf("%d", ptypes.DefaultPermFlags))
+		setbitS[i] = ifExistsElse(each, 4, permsS[i])
 	}
 
 	//TODO convert int to uint64, see issue #25
-	perms = make([]int, len(permsS))
+	perms = make([]ptypes.PermFlag, len(permsS))
 	for i, perm := range permsS {
-		perms[i], err = strconv.Atoi(perm)
+		pflag, err := strconv.Atoi(perm)
 		if err != nil {
-			Exit(fmt.Errorf("Permissions must be an integer of *this* format"))
+			Exit(fmt.Errorf("Permissions must be an integer"))
 		}
+		perms[i] = ptypes.PermFlag(pflag)
 	}
-	setbits = make([]int, len(setbitS))
+	setbits = make([]ptypes.PermFlag, len(setbitS))
 	for i, setbit := range setbitS {
-		setbits[i], err = strconv.Atoi(setbit)
+		setbitsFlag, err := strconv.Atoi(setbit)
 		if err != nil {
-			Exit(fmt.Errorf("SetBits must be an integer of *this* format"))
+			Exit(fmt.Errorf("SetBits must be an integer"))
 		}
+		setbits[i] = ptypes.PermFlag(setbitsFlag)
 	}
 	return pubkeys, amts, names, perms, setbits
 }
