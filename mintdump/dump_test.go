@@ -42,31 +42,51 @@ func TestDumpRestore(t *testing.T) {
 */
 
 func TestRestoreDump(t *testing.T) {
-	b, err := ioutil.ReadFile(path.Join(TestDir, "data1.json"))
+	b1, err := ioutil.ReadFile(path.Join(TestDir, "data1.json")) // with validators
 	if err != nil {
 		t.Fatal(err)
 	}
-	b = bytes.Trim(b, "\n")
+	b2, err := ioutil.ReadFile(path.Join(TestDir, "data2.json")) // without
+	if err != nil {
+		t.Fatal(err)
+	}
+	b1 = bytes.Trim(b1, "\n")
+	b2 = bytes.Trim(b2, "\n")
 
 	// restore to a memdir
 	config.Set("db_backend", "memdb")
 	cfg.ApplyConfig(config) // Notify modules of new config
-	CoreRestore("", b)
+	CoreRestore("", b1)
 
 	stateDB := dbm.GetDB("state")
 	st := sm.LoadState(stateDB)
 	acc := st.GetAccount(ptypes.GlobalPermissionsAddress)
 	fmt.Println(acc)
 
-	dump := CoreDump()
+	dump1 := CoreDump(true) // with validators
 
-	if bytes.Compare(b, dump) != 0 {
-		ld, lb := len(dump), len(b)
+	if bytes.Compare(b1, dump1) != 0 {
+		ld, lb := len(dump1), len(b1)
 		max := int(math.Max(float64(ld), float64(lb)))
 		n := 100
 		for i := 0; i < max/n; i++ {
-			dd := dump[i*n : (i+1)*n]
-			bb := b[i*n : (i+1)*n]
+			dd := dump1[i*n : (i+1)*n]
+			bb := b1[i*n : (i+1)*n]
+			if bytes.Compare(dd, bb) != 0 {
+				t.Fatalf("Error in dumps! Got \n\n\n\n %s \n\n\n\n Expected \n\n\n\n %s", dd, bb)
+			}
+		}
+	}
+
+	CoreRestore("", b2)
+	dump2 := CoreDump(false) //without validators
+	if bytes.Compare(b2, dump2) != 0 {
+		ld, lb := len(dump2), len(b2)
+		max := int(math.Max(float64(ld), float64(lb)))
+		n := 100
+		for i := 0; i < max/n; i++ {
+			dd := dump2[i*n : (i+1)*n]
+			bb := b2[i*n : (i+1)*n]
 			if bytes.Compare(dd, bb) != 0 {
 				t.Fatalf("Error in dumps! Got \n\n\n\n %s \n\n\n\n Expected \n\n\n\n %s", dd, bb)
 			}

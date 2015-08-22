@@ -103,6 +103,10 @@ func (st *Stack) Dup(n int) {
 
 // Not an opcode, costs no gas.
 func (st *Stack) Peek() Word256 {
+	if st.ptr == 0 {
+		st.setErr(ErrDataStackUnderflow)
+		return Zero256
+	}
 	return st.data[st.ptr-1]
 }
 

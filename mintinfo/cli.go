@@ -68,7 +68,8 @@ func cliNetInfo(c *cli.Context) {
 func cliGenesis(c *cli.Context) {
 	r, err := client.Genesis()
 	ifExit(err)
-	s, err := formatOutput(c, 0, r)
+	r2 := r.Genesis
+	s, err := formatOutput(c, 0, r2)
 	ifExit(err)
 	fmt.Println(s)
 }
@@ -97,7 +98,8 @@ func cliConsensus(c *cli.Context) {
 func cliUnconfirmed(c *cli.Context) {
 	r, err := client.ListUnconfirmedTxs()
 	ifExit(err)
-	s, err := formatOutput(c, 0, r)
+	r2 := r.Txs
+	s, err := formatOutput(c, 0, r2)
 	ifExit(err)
 	fmt.Println(s)
 }
@@ -121,7 +123,11 @@ func cliAccounts(c *cli.Context) {
 		if r == nil {
 			exit(fmt.Errorf("Account %X does not exist", addrBytes))
 		}
-		s, err := formatOutput(c, 1, r)
+		r2 := r.Account
+		if r2 == nil {
+			exit(fmt.Errorf("Account %X does not exist", addrBytes))
+		}
+		s, err := formatOutput(c, 1, r2)
 		ifExit(err)
 		fmt.Println(s)
 	}
@@ -139,7 +145,8 @@ func cliNames(c *cli.Context) {
 		name := args[0]
 		r, err := client.GetName(name)
 		ifExit(err)
-		s, err := formatOutput(c, 1, r)
+		r2 := r.Entry
+		s, err := formatOutput(c, 1, r2)
 		ifExit(err)
 		if len(args) > 1 {
 			if args[1] == "data" {
@@ -262,7 +269,8 @@ func cliBroadcast(c *cli.Context) {
 	ifExit(err)
 	r, err := client.BroadcastTx(tx)
 	ifExit(err)
-	s, err := formatOutput(c, 1, r)
+	r2 := r.Receipt
+	s, err := formatOutput(c, 1, r2)
 	ifExit(err)
 	fmt.Println(s)
 }

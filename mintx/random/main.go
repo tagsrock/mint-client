@@ -37,7 +37,7 @@ func makeKeys() (keys []*account.PrivAccount) {
 		var privKeyBytes [64]byte
 		keyBytes, _ := hex.DecodeString(k)
 		copy(privKeyBytes[:], keyBytes)
-		keys = append(keys, account.GenPrivAccountFromPrivKeyBytes(&privKeyBytes))
+		keys = append(keys, account.GenPrivAccountFromPrivKeyBytes(privKeyBytes[:]))
 	}
 	return
 }
@@ -80,7 +80,7 @@ func main() {
 			*errs += 1
 			continue
 		}
-		fmt.Printf("TxID: %X\n", rec.TxHash)
+		fmt.Printf("TxID: %X\n", rec.Receipt.TxHash)
 	}
 }
 
@@ -95,7 +95,7 @@ func pickAccountNonceAmount(errs *int) (*account.PrivAccount, int, int, int64) {
 		*errs += 1
 		return nil, 0, 0, 0
 	}
-	nonce := acc.Sequence
+	nonce := acc.Account.Sequence
 
 	maxAmt := 100
 	amt := int64(rand.Intn(maxAmt))

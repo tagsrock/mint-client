@@ -90,6 +90,7 @@ func makeBlock(t *testing.T, state *State, validation *types.Validation, txs []t
 			Txs: txs,
 		},
 	}
+	block.FillHeader()
 
 	// Fill in block StateHash
 	err := state.ComputeBlockStateHash(block)
@@ -621,11 +622,11 @@ func TestAddValidator(t *testing.T) {
 	// The validation for the next block should only require 1 signature
 	// (the new validator wasn't active for block0)
 	precommit0 := &types.Vote{
-		Height:     1,
-		Round:      0,
-		Type:       types.VoteTypePrecommit,
-		BlockHash:  block0.Hash(),
-		BlockParts: block0Parts.Header(),
+		Height:           1,
+		Round:            0,
+		Type:             types.VoteTypePrecommit,
+		BlockHash:        block0.Hash(),
+		BlockPartsHeader: block0Parts.Header(),
 	}
 	privValidators[0].SignVote(s0.ChainID, precommit0)
 
