@@ -395,7 +395,7 @@ func unpackResponse(resp *http.Response) (string, string, error) {
 // sign and broadcast convenience
 
 // tx has either one input or we default to the first one (ie for send/bond)
-// TODO: better support for multisig..
+// TODO: better support for multisig and bonding
 func signTx(signAddr, chainID string, tx_ types.Tx) ([]byte, types.Tx, error) {
 	signBytes := fmt.Sprintf("%X", account.SignBytes(chainID, tx_))
 	var inputAddr []byte
@@ -415,7 +415,10 @@ func signTx(signAddr, chainID string, tx_ types.Tx) ([]byte, types.Tx, error) {
 		defer func(s *account.SignatureEd25519) { tx.Input.Signature = *s }(&sigED)
 	case *types.BondTx:
 		inputAddr = tx.Inputs[0].Address
-		defer func(s *account.SignatureEd25519) { tx.Inputs[0].Signature = *s }(&sigED)
+		defer func(s *account.SignatureEd25519) {
+			tx.Signature = *s
+			tx.Inputs[0].Signature = *s
+		}(&sigED)
 	case *types.UnbondTx:
 		inputAddr = tx.Address
 		defer func(s *account.SignatureEd25519) { tx.Signature = *s }(&sigED)
