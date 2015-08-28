@@ -28,6 +28,7 @@ func cliOutput(c *cli.Context) {
 */
 
 func cliSend(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
@@ -38,6 +39,8 @@ func cliSend(c *cli.Context) {
 }
 
 func cliName(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
+	fmt.Println("CHAIN ID FROM NAME:", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
@@ -58,6 +61,7 @@ func cliName(c *cli.Context) {
 }
 
 func cliCall(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
@@ -69,6 +73,7 @@ func cliCall(c *cli.Context) {
 }
 
 func cliPermissions(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, nonceS, addr := c.String("pubkey"), c.String("nonce"), c.String("addr")
@@ -85,6 +90,7 @@ func cliPermissions(c *cli.Context) {
 }
 
 func cliNewAccount(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	/*
 		chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
 		pubkey := c.String("pubkey")
@@ -98,6 +104,7 @@ func cliNewAccount(c *cli.Context) {
 }
 
 func cliBond(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	pubkey, amtS, nonceS, unbondAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("unbond-to")
@@ -109,6 +116,7 @@ func cliBond(c *cli.Context) {
 }
 
 func cliUnbond(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	addr, height := c.String("addr"), c.String("height")
@@ -119,6 +127,7 @@ func cliUnbond(c *cli.Context) {
 }
 
 func cliRebond(c *cli.Context) {
+	config.Set("chain_id", c.String("chainID"))
 	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
 	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
 	addr, height := c.String("addr"), c.String("height")

@@ -7,8 +7,9 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
-func EventStringAccInput( // Functions to generate eventId strings
-addr []byte) string                             { return fmt.Sprintf("Acc/%X/Input", addr) }
+// Functions to generate eventId strings
+
+func EventStringAccInput(addr []byte) string    { return fmt.Sprintf("Acc/%X/Input", addr) }
 func EventStringAccOutput(addr []byte) string   { return fmt.Sprintf("Acc/%X/Output", addr) }
 func EventStringAccCall(addr []byte) string     { return fmt.Sprintf("Acc/%X/Call", addr) }
 func EventStringLogEvent(addr []byte) string    { return fmt.Sprintf("Log/%X", addr) }

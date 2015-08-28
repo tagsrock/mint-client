@@ -381,12 +381,14 @@ func main() {
 
 }
 
+// XXX: apparently this doesn't work!?
 func before(c *cli.Context) error {
 	var level int
 	if c.GlobalBool("debug") || c.Bool("debug") {
 		level = 2
 	}
 	log.SetLoggers(level, os.Stdout, os.Stderr)
+
 	return nil
 }
 

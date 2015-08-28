@@ -13,9 +13,8 @@ import (
 )
 
 func init() {
-
-	config := // Creates ~/.tendermint_test/*
-	GetConfig("")
+	// Creates ~/.tendermint_test/*
+	config := GetConfig("")
 	cfg.ApplyConfig(config)
 }
 

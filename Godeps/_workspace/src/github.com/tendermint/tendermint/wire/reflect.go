@@ -93,7 +93,7 @@ var (
 )
 
 const (
-	rfc2822 = "Mon Jan 02 15:04:05 -0700 2006"
+	rfc2822 = "Mon Jan 02 15:04:05.000000000 -0700 2006"
 )
 
 // NOTE: do not access typeInfos directly, but call GetTypeInfo()
