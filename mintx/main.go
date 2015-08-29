@@ -387,7 +387,8 @@ func before(c *cli.Context) error {
 	if c.GlobalBool("debug") || c.Bool("debug") {
 		level = 2
 	}
-	log.SetLoggers(level, os.Stdout, os.Stderr)
+	_ = level
+	log.SetLoggers(2, os.Stdout, os.Stderr)
 
 	return nil
 }

@@ -514,7 +514,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 	// subscribe to event and wait for tx to be committed
 	wsAddr := strings.TrimPrefix(nodeAddr, "http://")
 	wsAddr = "ws://" + wsAddr + "websocket"
-	logger.Debugln(wsAddr)
+	logger.Debugf("Websocket Address %s\n", wsAddr)
 	wsClient := cclient.NewWSClient(wsAddr)
 	wsClient.Start()
 	eid := types.EventStringAccInput(inputAddr)
