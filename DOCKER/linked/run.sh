@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #default
-NUM_NODES=2
+NUM_NODES=1
 
 # XXX: cleanup at beginning regardless
 if [ "$CLEANUP" == "true" ]; then
