@@ -24,7 +24,7 @@ echo "******** RUNNING TEST: NameTx_$I ************"
 # create a namereg entry
 REG_NAME="artifact"
 REG_DATA="blue"
-mintx --debug name --name $REG_NAME"_"$I --data $REG_DATA"_"$I --amt 1000 --fee 0 --sign --broadcast --wait
+mintx --log=3 name --name=$REG_NAME"_"$I --data=$REG_DATA"_"$I --amt=1000 --fee=0 --sign --broadcast --wait
 EXIT=$?
 if [ $EXIT -gt 0 ]; then
 	echo "Failed to send mint transaction"
@@ -54,7 +54,7 @@ echo "******** RUNNING TEST: CallTx with wait_$I ************"
 # PUSH1 05 PUSH1 00 MSTORE PUSH1 20 PUSH1 00 RETURN
 CODE="600560005260206000F3"
 EXPECT="5"
-MINTX_OUTPUT=`mintx --debug call --to "" --data $CODE --amt 10 --fee 0 --gas 1000 --sign --broadcast --wait`
+MINTX_OUTPUT=`mintx --log=3 call --to="" --data=$CODE --amt=10 --fee=0 --gas=1000 --sign --broadcast --wait`
 EXIT=$?
 echo "$MINTX_OUTPUT"
 if [ $EXIT -gt 0 ]; then

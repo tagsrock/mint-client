@@ -68,7 +68,7 @@ func cliGenesis(cmd *cobra.Command, args []string) {
 	r, err := client.Genesis()
 	ifExit(err)
 	r2 := r.Genesis
-	s, err := formatOutput(c, 0, r2)
+	s, err := formatOutput(args, 0, r2)
 	ifExit(err)
 	fmt.Println(s)
 }
@@ -98,7 +98,7 @@ func cliUnconfirmed(cmd *cobra.Command, args []string) {
 	r, err := client.ListUnconfirmedTxs()
 	ifExit(err)
 	r2 := r.Txs
-	s, err := formatOutput(c, 0, r2)
+	s, err := formatOutput(args, 0, r2)
 	ifExit(err)
 	fmt.Println(s)
 }
@@ -125,7 +125,7 @@ func cliAccounts(cmd *cobra.Command, args []string) {
 		if r2 == nil {
 			exit(fmt.Errorf("Account %X does not exist", addrBytes))
 		}
-		s, err := formatOutput(c, 1, r2)
+		s, err := formatOutput(args, 1, r2)
 		ifExit(err)
 		fmt.Println(s)
 	}
@@ -143,7 +143,7 @@ func cliNames(cmd *cobra.Command, args []string) {
 		r, err := client.GetName(name)
 		ifExit(err)
 		r2 := r.Entry
-		s, err := formatOutput(c, 1, r2)
+		s, err := formatOutput(args, 1, r2)
 		ifExit(err)
 		if len(args) > 1 {
 			if args[1] == "data" {
@@ -262,7 +262,7 @@ func cliBroadcast(cmd *cobra.Command, args []string) {
 	r, err := client.BroadcastTx(tx)
 	ifExit(err)
 	r2 := r.Receipt
-	s, err := formatOutput(c, 1, r2)
+	s, err := formatOutput(args, 1, r2)
 	ifExit(err)
 	fmt.Println(s)
 }
