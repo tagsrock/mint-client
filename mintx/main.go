@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/log"
 )
 
@@ -377,8 +378,7 @@ func main() {
 		permissionsCmd,
 		newAccountCmd,
 	}
-	app.Run(os.Args)
-
+	common.IfExit(app.Run(os.Args))
 }
 
 // XXX: apparently this doesn't work!?

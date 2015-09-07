@@ -10,6 +10,7 @@ var (
 	seeds    string
 
 	fast_sync bool
+	skip_upnp bool
 
 	db_backend string
 	log_level  string
@@ -22,7 +23,7 @@ func main() {
 		Use:   "mintconfig",
 		Short: "a tool for generating config files",
 		Long:  "use the flags to build a config file",
-		Run:   setConfig,
+		Run:   cliConfig,
 	}
 
 	rootCmd.Flags().StringVarP(&moniker, "moniker", "", "golden_goose", "A moniker for your node. Nice to have but not necessary")
@@ -31,11 +32,10 @@ func main() {
 	rootCmd.Flags().StringVarP(&seeds, "seeds", "", "", "A seed address for instantiating new nodes")
 
 	rootCmd.Flags().BoolVarP(&fast_sync, "fast-sync", "", false, "Catch up to an existing chain (true) or run the consensus protocol (false)")
+	rootCmd.Flags().BoolVarP(&skip_upnp, "skip-upnp", "", false, "Skip UPNP port mapping")
 
 	rootCmd.Flags().StringVarP(&db_backend, "db", "", "leveldb", "Database back-end; options are: leveldb or memdb")
 	rootCmd.Flags().StringVarP(&log_level, "log", "", "debug", "Set the log level; options are: error < warn < notice < info < debug")
 
-	rootCmd.AddCommand()
 	rootCmd.Execute()
-
 }

@@ -146,7 +146,7 @@ func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.P
 
 	// create directory to save priv validators and genesis.json
 	if DirFlag == "" {
-		DirFlag = path.Join(DataContainersPath, chainID)
+		DirFlag = path.Join(BlockchainsPath, chainID)
 	}
 	if _, err = os.Stat(DirFlag); err != nil {
 		if err = os.MkdirAll(DirFlag, 0700); err != nil {
