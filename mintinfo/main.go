@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
@@ -11,11 +12,11 @@ import (
 var (
 	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
 	DefaultNodeRPCPort = "46657"
-	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
+	DefaultNodeRPCAddr = DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
 	DefaultChainID string
 
-	REQUEST_TYPE = "JSONRPC"
+	REQUEST_TYPE = "HTTP"
 	client       cclient.Client
 )
 
@@ -25,21 +26,16 @@ func init() {
 	if nodeAddr != "" {
 		DefaultNodeRPCAddr = nodeAddr
 	}
-
-	chainID := os.Getenv("MINTX_CHAINID")
-	if chainID != "" {
-		DefaultChainID = chainID
-	}
 }
+
+var (
+	nodeAddrFlag string
+)
 
 func main() {
 
 	// these are defined in here so we can update the
 	// defaults with env variables first
-	var (
-		nodeAddrFlag string
-		chainIDFlag  string
-	)
 
 	var statusCmd = &cobra.Command{
 		Use:   "status",
@@ -120,17 +116,13 @@ func main() {
 	}
 
 	var rootCmd = &cobra.Command{
-		Use:   "mintinfo",
-		Short: "Fetch data from a tendermint node via rpc",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			nodeAddr := nodeAddrFlag
-			client = cclient.NewClient(nodeAddr, REQUEST_TYPE)
-		},
+		Use:              "mintinfo",
+		Short:            "Fetch data from a tendermint node via rpc",
+		PersistentPreRun: before,
 	}
 
 	// flags with env var defaults
 	rootCmd.PersistentFlags().StringVarP(&nodeAddrFlag, "node-addr", "", DefaultNodeRPCAddr, "set the address of the tendermint rpc server")
-	rootCmd.PersistentFlags().StringVarP(&chainIDFlag, "chainID", "", DefaultChainID, "specify the chainID")
 
 	rootCmd.AddCommand(
 		statusCmd,
@@ -148,6 +140,17 @@ func main() {
 		broadcastCmd,
 	)
 	rootCmd.Execute()
+}
+
+func before(cmd *cobra.Command, args []string) {
+	if !strings.HasPrefix(nodeAddrFlag, "http://") {
+		nodeAddrFlag = "http://" + nodeAddrFlag
+	}
+	if !strings.HasSuffix(nodeAddrFlag, "/") {
+		nodeAddrFlag += "/"
+	}
+
+	client = cclient.NewClient(nodeAddrFlag, REQUEST_TYPE)
 }
 
 func exit(err error) {

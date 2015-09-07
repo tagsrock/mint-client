@@ -2,8 +2,8 @@
 
 # Some simple tests for sending txs through the cli
 
-export MINTX_NODE_ADDR=http://tendermint:46657/
-export MINTX_SIGN_ADDR=http://keys:4767
+export MINTX_NODE_ADDR=tendermint:46657
+export MINTX_SIGN_ADDR=keys:4767
 export MINTX_CHAINID=$CHAIN_ID
 export MINTX_PUBKEY=$PUBKEY
 

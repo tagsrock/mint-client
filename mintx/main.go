@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/log"
@@ -12,11 +13,11 @@ import (
 var (
 	DefaultKeyDaemonHost = "localhost"
 	DefaultKeyDaemonPort = "4767"
-	DefaultKeyDaemonAddr = "http://" + DefaultKeyDaemonHost + ":" + DefaultKeyDaemonPort
+	DefaultKeyDaemonAddr = DefaultKeyDaemonHost + ":" + DefaultKeyDaemonPort
 
 	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
 	DefaultNodeRPCPort = "46657"
-	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort + "/"
+	DefaultNodeRPCAddr = DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
 	DefaultPubKey  string
 	DefaultChainID string
@@ -183,6 +184,17 @@ func main() {
 func before(cmd *cobra.Command, args []string) {
 	config.Set("chain_id", chainidFlag)
 	log.SetLoggers(logLevelFlag, os.Stdout, os.Stderr)
+
+	if !strings.HasPrefix(nodeAddrFlag, "http://") {
+		nodeAddrFlag = "http://" + nodeAddrFlag
+	}
+	if !strings.HasSuffix(nodeAddrFlag, "/") {
+		nodeAddrFlag += "/"
+	}
+
+	if !strings.HasPrefix(signAddrFlag, "http://") {
+		signAddrFlag = "http://" + signAddrFlag
+	}
 }
 
 func after(cmd *cobra.Command, args []string) {
