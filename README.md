@@ -41,6 +41,14 @@ Let's use these tools to register a real domain name against the blockchain!
 
 First thing we need the `eris-keys` daemon to generate private keys and handle signing.
 
+`eris-keys` depends on the gmp library. On ubuntu, you can get with
+
+```
+sudo apt-get install libgmp3-dev
+```
+
+Now,
+
 ```
 go get github.com/eris-ltd/eris-keys
 eris-keys &
