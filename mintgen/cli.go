@@ -189,7 +189,8 @@ func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.P
 
 func newGenDoc(chainID string, nVal, nAcc int) *stypes.GenesisDoc {
 	genDoc := stypes.GenesisDoc{
-		ChainID: chainID,
+		ChainID:     chainID,
+		GenesisTime: time.Now(),
 	}
 	genDoc.Accounts = make([]stypes.GenesisAccount, nAcc)
 	genDoc.Validators = make([]stypes.GenesisValidator, nVal)
