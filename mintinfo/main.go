@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
+	DefaultNodeRPCHost = "localhost"
 	DefaultNodeRPCPort = "46657"
 	DefaultNodeRPCAddr = DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 

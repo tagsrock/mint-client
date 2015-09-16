@@ -15,7 +15,7 @@ var (
 	DefaultKeyDaemonPort = "4767"
 	DefaultKeyDaemonAddr = DefaultKeyDaemonHost + ":" + DefaultKeyDaemonPort
 
-	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
+	DefaultNodeRPCHost = "localhost"
 	DefaultNodeRPCPort = "46657"
 	DefaultNodeRPCAddr = DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
