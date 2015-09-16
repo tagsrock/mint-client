@@ -15,8 +15,7 @@ import (
 const (
 	wsEventsChannelCapacity  = 10
 	wsResultsChannelCapacity = 10
-
-	wsWriteTimeoutSeconds = 30 // each write times out after this
+	wsWriteTimeoutSeconds    = 10
 )
 
 type WSClient struct {
@@ -57,7 +56,7 @@ func (wsc *WSClient) dial() error {
 	if err != nil {
 		return err
 	}
-	// set the ping/pong handlers
+	// Set the ping/pong handlers
 	con.SetPingHandler(func(m string) error {
 		con.WriteControl(websocket.PongMessage, []byte(m), time.Now().Add(time.Second*wsWriteTimeoutSeconds))
 		return nil
@@ -88,7 +87,7 @@ func (wsc *WSClient) receiveEventsRoutine() {
 				wsc.Stop()
 				break
 			}
-			if strings.HasSuffix(response.Id, "#event") {
+			if strings.HasSuffix(response.ID, "#event") {
 				wsc.EventsCh <- *response.Result.(*ctypes.ResultEvent)
 			} else {
 				wsc.ResultsCh <- response.Result
@@ -101,7 +100,7 @@ func (wsc *WSClient) receiveEventsRoutine() {
 func (wsc *WSClient) Subscribe(eventid string) error {
 	err := wsc.WriteJSON(rpctypes.RPCRequest{
 		JSONRPC: "2.0",
-		Id:      "",
+		ID:      "",
 		Method:  "subscribe",
 		Params:  []interface{}{eventid},
 	})
@@ -112,7 +111,7 @@ func (wsc *WSClient) Subscribe(eventid string) error {
 func (wsc *WSClient) Unsubscribe(eventid string) error {
 	err := wsc.WriteJSON(rpctypes.RPCRequest{
 		JSONRPC: "2.0",
-		Id:      "",
+		ID:      "",
 		Method:  "unsubscribe",
 		Params:  []interface{}{eventid},
 	})
