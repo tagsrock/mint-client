@@ -48,7 +48,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 
 	chainID := args[1]
 
-	_, _, err = coreRandom(N, chainID)
+	_, _, err = coreRandom(N, chainID, PubkeyFlag, RootFlag, CsvPathFlag, NoValAccountsFlag)
 	IfExit(err)
 	// XXX: should we just output the genesis here instead?
 	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", DirFlag)
@@ -92,13 +92,12 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 			}
 		}
 	} else if pubKeys != "" {
-		pubkeys := strings.Split(pubKeys, " ")
+		pubkeys := strings.Split(pubKeys, ",")
 		amt := int64(1) << 50
 		pubKeys := pubKeyStringsToPubKeys(pubkeys)
 
-		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
+			genDocAddAccount(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
 		}
 	} else {
 		privJSON := readStdinTimeout()
@@ -118,19 +117,53 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 	return genesisBytes, nil
 }
 
-func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
+func coreRandom(N int, chainID, pubKeys, roots, csvFile string, noVals bool) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
 	fmt.Println("Generating accounts ...")
 	genDoc, _, privVals := state.RandGenesisDoc(N, true, 100000, N, false, 1000)
 
 	genDoc.ChainID = chainID
 
 	// RandGenesisDoc produces random accounts and validators.
-	// Give the validators accounts:
-	genDoc.Accounts = make([]stypes.GenesisAccount, N)
-	for i, pv := range privVals {
-		genDoc.Accounts[i] = stypes.GenesisAccount{
-			Address: pv.Address,
-			Amount:  int64(2) << 50,
+	genDoc.Accounts = make([]stypes.GenesisAccount, 0)
+
+	if !noVals {
+		perms := ptypes.DefaultPermFlags
+		// Give the validators accounts:
+		for _, pv := range privVals {
+			genDocAddAccount(genDoc, pv.PubKey, int64(2)<<50, "", perms, perms, -1)
+		}
+	}
+
+	if pubKeys != "" {
+		pubkeys := strings.Split(pubKeys, ",")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		for _, pk := range pubKeys {
+			perms := ptypes.DefaultPermFlags
+			genDocAddAccount(genDoc, pk, amt, "", perms, perms, -1)
+		}
+	}
+
+	if roots != "" {
+		pubkeys := strings.Split(pubKeys, ",")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		for _, pk := range pubKeys {
+			perms := ptypes.AllPermFlags
+			genDocAddAccount(genDoc, pk, amt, "", perms, perms, -1)
+		}
+	}
+
+	if csvFile != "" {
+		pubkeys, amts, names, perms, setbits, err := parseCsv(csvFile)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i, pk := range pubkeys {
+			genDocAddAccount(genDoc, pk, amts[i], names[i], perms[i], setbits[i], -1)
 		}
 	}
 
@@ -216,7 +249,7 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc
 
 func genDocAddAccount(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
 	addr := pubKey.Address()
-	genDoc.Accounts[index] = stypes.GenesisAccount{
+	acc := stypes.GenesisAccount{
 		Address: addr,
 		Amount:  amt,
 		Name:    name,
@@ -226,6 +259,11 @@ func genDocAddAccount(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, a
 				SetBit: setbit,
 			},
 		},
+	}
+	if index < 0 {
+		genDoc.Accounts = append(genDoc.Accounts, acc)
+	} else {
+		genDoc.Accounts[index] = acc
 	}
 }
 

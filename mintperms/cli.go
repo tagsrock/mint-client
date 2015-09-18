@@ -29,10 +29,7 @@ func cliStringsToInts(cmd *cobra.Command, args []string) {
 		IfExit(err)
 		bp.Set(pf, vi > 0)
 	}
-	fmt.Println("Perms and SetBit (As Integers)")
-	fmt.Printf("%d\t%d\n", bp.Perms, bp.SetBit)
-	fmt.Println("\nPerms and SetBit (As Bitmasks)")
-	fmt.Printf("%b\t%b\n", bp.Perms, bp.SetBit)
+	printPerms(bp, BitmaskFlag)
 }
 
 func coreIntsToStrings(perms, setbits types.PermFlag) map[string]bool {
@@ -61,36 +58,41 @@ func cliIntsToStrings(cmd *cobra.Command, args []string) {
 	IfExit(err)
 
 	m := coreIntsToStrings(types.PermFlag(perms), types.PermFlag(setbits))
-	for name, v := range m {
-		fmt.Printf("%s: %v\n", name, v)
-	}
+	printStringPerms(m)
 }
 
 func cliBBPB(cmd *cobra.Command, args []string) {
 	pf := types.DefaultPermFlags
-	fmt.Println("Perms and SetBit (As Integers)")
-	fmt.Printf("%d\t%d\n", pf, pf)
-	fmt.Println("\nPerms and SetBit (As Bitmasks)")
-	fmt.Printf("%b\t%b\n", pf, pf)
+	printPerms(types.BasePermissions{pf, pf}, BitmaskFlag)
+
+	fmt.Println("")
 
 	m := coreIntsToStrings(pf, pf)
-
-	for name, v := range m {
-		fmt.Printf("%s: %v\n", name, v)
-	}
+	printStringPerms(m)
 }
 
 func cliAll(cmd *cobra.Command, args []string) {
 	pf := types.AllPermFlags
-	fmt.Println("Perms and SetBit (As Integers)")
-	fmt.Printf("%d\t%d\n", pf, pf)
-	fmt.Println("\nPerms and SetBit (As Bitmasks)")
-	fmt.Printf("%b\t%b\n", pf, pf)
+	printPerms(types.BasePermissions{pf, pf}, BitmaskFlag)
+
+	fmt.Println("")
 
 	m := coreIntsToStrings(pf, pf)
+	printStringPerms(m)
+}
 
-	for name, v := range m {
-		fmt.Printf("%s: %v\n", name, v)
+func printPerms(bp types.BasePermissions, bits bool) {
+	fmt.Println("Perms and SetBit (As Integers)")
+	fmt.Printf("%d,%d\n", bp.Perms, bp.SetBit)
+	if bits {
+		fmt.Println("\nPerms and SetBit (As Bitmasks)")
+		fmt.Printf("%b,%b\n", bp.Perms, bp.SetBit)
 	}
+}
 
+func printStringPerms(m map[string]bool) {
+	for i := 0; i < int(types.NumPermissions); i++ {
+		permName := types.PermFlagToString(types.PermFlag(1) << uint(i))
+		fmt.Printf("%s: %v\n", permName, m[permName])
+	}
 }

@@ -81,6 +81,9 @@ func unpackSignAndBroadcast(result *core.TxResult, err error) {
 		return
 	}
 	fmt.Printf("Transaction Hash: %X\n", result.Hash)
+	if result.Address != nil {
+		fmt.Printf("Contract Address: %X\n", result.Address)
+	}
 	if result.Return != nil {
 		fmt.Printf("Block Hash: %X\n", result.BlockHash)
 		fmt.Printf("Return Value: %X\n", result.Return)
