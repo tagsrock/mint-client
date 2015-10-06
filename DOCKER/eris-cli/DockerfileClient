@@ -3,10 +3,10 @@ FROM eris/base
 
 ENV DOCKERFILES ./DOCKER/eris-cli
 
-# grab deps (gmp)
+# grab deps (jq)
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-    libgmp3-dev jq && \
+    jq && \
   rm -rf /var/lib/apt/lists/*
 
 # set the repo and install tendermint

@@ -3,12 +3,6 @@ FROM eris/base
 
 ENV DOCKERFILES ./DOCKER/linked
 
-# grab deps (gmp)
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-    libgmp3-dev && \
-  rm -rf /var/lib/apt/lists/*
-
 # grab tendermint
 RUN mkdir -p $GOPATH/src/github.com/tendermint/tendermint
 RUN git clone https://github.com/eris-ltd/tendermint $GOPATH/src/github.com/tendermint/tendermint

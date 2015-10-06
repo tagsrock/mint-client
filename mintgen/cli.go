@@ -17,7 +17,6 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	stypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
@@ -95,9 +94,10 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 		pubkeys := strings.Split(pubKeys, ",")
 		amt := int64(1) << 50
 		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+		genDoc = newGenDoc(chainID, len(pubkeys), len(pubkeys))
 
 		for i, pk := range pubKeys {
-			genDocAddAccount(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
+			genDocAddAccountAndValidator(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
 		}
 	} else {
 		privJSON := readStdinTimeout()
@@ -119,7 +119,7 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 
 func coreRandom(N int, chainID, pubKeys, roots, csvFile string, noVals bool) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
 	fmt.Println("Generating accounts ...")
-	genDoc, _, privVals := state.RandGenesisDoc(N, true, 100000, N, false, 1000)
+	genDoc, _, privVals := stypes.RandGenesisDoc(N, true, 100000, N, false, 1000)
 
 	genDoc.ChainID = chainID
 

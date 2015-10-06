@@ -20,11 +20,6 @@
 			"Rev": "d2b94fd789ea21d12fac1a4443dd3a3f79cda72c"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-140-g83f9ad1",
-			"Rev": "83f9ad1f28e43685b78e9746897327af282a0a96"
-		},
-		{
 			"ImportPath": "github.com/eris-ltd/common/go/common",
 			"Rev": "4efd89be9b8794df5518a5187af2a5e6fc9ebed9"
 		},
@@ -33,8 +28,20 @@
 			"Rev": "4efd89be9b8794df5518a5187af2a5e6fc9ebed9"
 		},
 		{
-			"ImportPath": "github.com/eris-ltd/eris-keys/crypto",
-			"Rev": "69aef2085ffc09153df913973df6d25e94133546"
+			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/key_store",
+			"Rev": "8813ea90bdacfce44086aa9e6067974f0734207c"
+		},
+		{
+			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/randentropy",
+			"Rev": "8813ea90bdacfce44086aa9e6067974f0734207c"
+		},
+		{
+			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/sha3",
+			"Rev": "8813ea90bdacfce44086aa9e6067974f0734207c"
+		},
+		{
+			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/util",
+			"Rev": "8813ea90bdacfce44086aa9e6067974f0734207c"
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
@@ -67,10 +74,6 @@
 			"Rev": "7b2dffbeaee47506726f29e36d19cf4ee90d361b"
 		},
 		{
-			"ImportPath": "github.com/sfreiberg/gotwilio",
-			"Rev": "b7230c284bd0c1614c94d00b9998c49f9a2737d8"
-		},
-		{
 			"ImportPath": "github.com/spf13/cobra",
 			"Rev": "8f5946caaeeff40a98d67f60c25e89c3525038a3"
 		},
@@ -97,88 +100,78 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/account",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tendermint/alert",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/common",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/config",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/db",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/events",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/logger",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/merkle",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/permission/types",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/core/types",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/core_client",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tendermint/rpc/server",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc/types",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/state",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/types",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/vm",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/wire",
-			"Comment": "0.1-26-g85d5b16",
-			"Rev": "85d5b16dbc610a6a27f6c3d4ece0316907babec6"
+			"Comment": "0.1-29-gb59ed8c",
+			"Rev": "b59ed8c9d2881f5a62a60a9cf5c350d9f00f27e0"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/pbkdf2",

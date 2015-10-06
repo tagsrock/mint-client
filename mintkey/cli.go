@@ -6,11 +6,24 @@ import (
 	"io/ioutil"
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go-uuid/uuid"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto"
+	kstore "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto/key_store"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
+
+func Pubkeyer(k *kstore.Key) ([]byte, error) {
+	priv := k.PrivateKey
+	privKeyBytes := new([64]byte)
+	copy(privKeyBytes[:32], priv)
+	pubKeyBytes := ed25519.MakePublicKey(privKeyBytes)
+	return pubKeyBytes[:], nil
+}
+
+func init() {
+	kstore.SetPubkeyer(Pubkeyer)
+}
 
 type PrivValidator struct {
 	Address    []byte                 `json:"address"`
@@ -31,12 +44,21 @@ func cliConvertErisKeyToPrivValidator(cmd *cobra.Command, args []string) {
 	addrBytes, err := hex.DecodeString(addr)
 	ifExit(err)
 
-	keyStore := crypto.NewKeyStorePlain(DefaultKeyStore)
+	privVal, err := coreConvertErisKeyToPrivValidator(addrBytes)
+	ifExit(err)
+
+	fmt.Println(string(wire.JSONBytes(privVal)))
+}
+
+func coreConvertErisKeyToPrivValidator(addrBytes []byte) (*PrivValidator, error) {
+	keyStore := kstore.NewKeyStorePlain(DefaultKeyStore)
 	key, err := keyStore.GetKey(addrBytes, "")
 	ifExit(err)
 
 	pub, err := key.Pubkey()
-	ifExit(err)
+	if err != nil {
+		return nil, err
+	}
 
 	var pubKey account.PubKeyEd25519
 	copy(pubKey[:], pub)
@@ -44,13 +66,11 @@ func cliConvertErisKeyToPrivValidator(cmd *cobra.Command, args []string) {
 	var privKey account.PrivKeyEd25519
 	copy(privKey[:], key.PrivateKey)
 
-	privVal := PrivValidator{
+	return &PrivValidator{
 		Address: addrBytes,
 		PubKey:  pubKey,
 		PrivKey: privKey,
-	}
-
-	fmt.Println(string(wire.JSONBytes(privVal)))
+	}, nil
 }
 
 func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
@@ -63,19 +83,29 @@ func cliConvertPrivValidatorToErisKey(cmd *cobra.Command, args []string) {
 	b, err := ioutil.ReadFile(pvf)
 	ifExit(err)
 
-	pv := new(PrivValidator)
-	wire.ReadJSON(pv, b, &err)
+	key, err := coreConvertPrivValidatorToErisKey(b)
 	ifExit(err)
 
-	keyStore := crypto.NewKeyStorePlain(DefaultKeyStore)
+	fmt.Printf("%X\n", key.Address)
+}
 
-	key := &crypto.Key{
+func coreConvertPrivValidatorToErisKey(b []byte) (key *kstore.Key, err error) {
+
+	pv := new(PrivValidator)
+	wire.ReadJSON(pv, b, &err)
+	if err != nil {
+		return nil, err
+	}
+
+	keyStore := kstore.NewKeyStorePlain(DefaultKeyStore)
+
+	key = &kstore.Key{
 		Id:         uuid.NewRandom(),
-		Type:       crypto.KeyType{crypto.CurveTypeEd25519, crypto.AddrTypeRipemd160},
+		Type:       kstore.KeyType{kstore.CurveTypeEd25519, kstore.AddrTypeRipemd160},
 		Address:    pv.Address,
 		PrivateKey: pv.PrivKey[:],
 	}
 
-	fmt.Printf("%X\n", key.Address)
-	ifExit(keyStore.StoreKey(key, ""))
+	err = keyStore.StoreKey(key, "")
+	return key, err
 }
