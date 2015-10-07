@@ -43,7 +43,15 @@ func cliCall(cmd *cobra.Command, args []string) {
 func cliPermissions(cmd *cobra.Command, args []string) {
 	// all functions take at least 2 args (+ name)
 	if len(args) < 3 {
-		common.Exit(fmt.Errorf("Please enter the permission function you'd like to call, followed by it's arguments"))
+		s := fmt.Sprintf("Please enter the permission function you'd like to call, followed by it's arguments.")
+		s = fmt.Sprintf("%s\nOptions:", s)
+		for _, p := range core.PermsFuncs {
+			s = fmt.Sprintf("%s\n\t%s(%s)", s, p.Name, p.Args)
+		}
+		s += "\n"
+		s += "eg. mintx permission set_base 098E260AD99FFAE17A02E0F3692C7A493B122274 create_account true\n"
+
+		common.Exit(fmt.Errorf(s))
 	}
 	permFunc := args[0]
 	tx, err := core.Permissions(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, nonceFlag, permFunc, args[1:])

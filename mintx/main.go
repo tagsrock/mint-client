@@ -154,7 +154,7 @@ func main() {
 		Run:   cliPermissions,
 	}
 	permissionsCmd.Flags().StringVarP(&addrFlag, "addr", "a", "", "specify an address")
-	permissionsCmd.Flags().StringVarP(&heightFlag, "height", "h", "", "specify a height to unbond at")
+	permissionsCmd.Flags().StringVarP(&heightFlag, "height", "n", "", "specify a height to unbond at")
 
 	var rootCmd = &cobra.Command{
 		Use:               "mintx",

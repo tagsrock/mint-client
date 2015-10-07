@@ -93,6 +93,19 @@ func Name(nodeAddr, signAddr, pubkey, addr, amtS, nonceS, feeS, name, data strin
 	return tx, nil
 }
 
+type PermFunc struct {
+	Name string
+	Args string
+}
+
+var PermsFuncs = []PermFunc{
+	PermFunc{"set_base", "address, permission flag, value"},
+	PermFunc{"unset_base", "address, permission flag"},
+	PermFunc{"set_global", "permission flag, value"},
+	PermFunc{"add_role", "address, role"},
+	PermFunc{"rm_role", "address, role"},
+}
+
 func Permissions(nodeAddr, signAddr, pubkey, addrS, nonceS, permFunc string, argsS []string) (*types.PermissionsTx, error) {
 	pub, _, nonce, err := checkCommon(nodeAddr, signAddr, pubkey, addrS, "0", "0")
 	if err != nil {
