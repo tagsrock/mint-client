@@ -1,5 +1,13 @@
 #! /bin/bash
 
+ifExit(){
+	if [ $? -ne 0 ]; then
+		echo "ifExit: $1"
+		exit 1
+	fi
+}
+
+
 #default
 NUM_NODES=1
 
@@ -32,6 +40,7 @@ echo "******** RUNNING KEYS DAEMON ************"
 for ((i=1; i<=$NUM_NODES; i++)) 
 do
 docker run --name mct_keys"_"$i --volumes-from mct_keys-data"_"$i -d mct_keys
+ifExit "failed to start keys"
 ADDR=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys eris-keys gen`
 # ADDR has an extra character. trim it
 ADDRS[$i]=${ADDR%?}
@@ -46,7 +55,7 @@ done
 
 for ((i=1; i<=$NUM_NODES; i++ ))
 do
-TMROOT=`docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_tendermint bash -c "mkdir -p \\$TMROOT; echo \\$TMROOT"`
+  TMROOT=`docker run --rm --volumes-from mct_tendermint-data"_"$i -t mct_tendermint bash -c "mkdir -p \\$TMROOT; echo \\$TMROOT"`
 done
 TMROOT=${TMROOT%?}
 echo "tmroot $TMROOT"
@@ -58,9 +67,9 @@ echo "chain_id $CHAIN_ID"
 # NOTE: I tried and failed to do this through an ENV var, so resorted to saving (and removing) priv_validator.json on the host ...
 for ((i=1; i<=$NUM_NODES; i++ ))
 do
-docker run --rm --volumes-from mct_keys-data"_"$i -t mct_client mintkey mint ${ADDRS[$i]} > priv_validator.json
-cat priv_validator.json | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/priv_validator.json"
-rm priv_validator.json
+  docker run --rm --volumes-from mct_keys-data"_"$i -t mct_client mintkey mint ${ADDRS[$i]} > priv_validator.json
+  cat priv_validator.json | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/priv_validator.json"
+  rm priv_validator.json
 done
 
 #------------------------------------------------------------------
@@ -80,10 +89,10 @@ echo "genesis $GENESIS"
 
 # make the config.toml
 
-mintconfig --moniker="test_mon" | docker run --rm --volumes-from mct_tendermint-data_1 -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
+docker run --rm --entrypoint mintconfig mct_client --moniker="test_mon" | docker run --rm --volumes-from mct_tendermint-data_1 -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
 for ((i=2; i<=$NUM_NODES; i++ ))
 do	
-mintconfig --moniker="test_nom" --seeds="mct_tendermint_1:46656" | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
+docker run --rm --entrypoint mintconfig mct_client --moniker="test_nom" --seeds="mct_tendermint_1:46656"  | docker run --rm --volumes-from mct_tendermint-data"_"$i -i mct_tendermint bash -c "cat > $TMROOT/config.toml"
 done
 #------------------------------------------------------------------
 # start tendermint
@@ -121,10 +130,12 @@ done
 # cleanup
 
 if [ "$DONT_CLEANUP" != "true" ]; then
-	echo "-----------"
-	echo "cleaning up ..."
-	for ((i=1; i<=$NUM_NODES; i++ ))
-	do	
-	docker rm -vf mct_keys"_"$i mct_tendermint"_"$i mct_keys-data"_"$i mct_tendermint-data"_"$i mct_client_test"_"$i
-	done
+	if [ "$CIRCLECI" != "true" ]; then
+    	    echo "-----------"
+  	    echo "cleaning up ..."
+  	    for ((i=1; i<=$NUM_NODES; i++ ))
+  	    do	
+  	    docker rm -vf mct_keys"_"$i mct_tendermint"_"$i mct_keys-data"_"$i mct_tendermint-data"_"$i mct_client_test"_"$i
+  	    done
+        fi
 fi
