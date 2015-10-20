@@ -9,17 +9,24 @@ import (
 	"path"
 	"testing"
 
-	dbm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/db"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
-	sm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
+	stypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-	//	smtypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
 )
+
+func MakeGenesisDocFromFile(genDocFile string) *stypes.GenesisDoc {
+	jsonBlob, err := ioutil.ReadFile(genDocFile)
+	if err != nil {
+		fmt.Sprintf("Couldn't read GenesisDoc file: %v", err)
+		os.Exit(1)
+	}
+	return stypes.GenesisDocFromJSON(jsonBlob)
+}
 
 func testCoreRandom(N int) error {
 	chainID := "test_chainID"
 
-	genBytes, privVals, err := coreRandom(N, chainID)
+	genBytes, privVals, err := coreRandom(N, chainID, "", "", "", false)
 	if err != nil {
 		return err
 	}
@@ -43,8 +50,7 @@ func testCoreRandom(N int) error {
 			return fmt.Errorf("written genesis.json different from returned by coreRandom")
 		}
 
-		db := dbm.NewMemDB()
-		gDoc, _ := sm.MakeGenesisStateFromFile(db, path.Join(dirFlag, "genesis.json"))
+		gDoc := MakeGenesisDocFromFile(path.Join(dirFlag, "genesis.json"))
 
 		if len(gDoc.Validators) != N {
 			return fmt.Errorf("Expected %d validators. Got %d", N, len(gDoc.Validators))
@@ -138,7 +144,7 @@ func testKnownCSV(csvFile string, csv GenDoc) error {
 		return err
 	}
 
-	genBytes, err := coreKnown(chainID, path.Join(DirFlag, "accounts.csv"))
+	genBytes, err := coreKnown(chainID, path.Join(DirFlag, "accounts.csv"), "")
 	if err != nil {
 		return err
 	}
@@ -147,8 +153,7 @@ func testKnownCSV(csvFile string, csv GenDoc) error {
 		return err
 	}
 
-	db := dbm.NewMemDB()
-	gDoc, _ := sm.MakeGenesisStateFromFile(db, path.Join(DirFlag, "genesis.json"))
+	gDoc := MakeGenesisDocFromFile(path.Join(DirFlag, "genesis.json"))
 
 	N := len(csv.pubkeys)
 	if len(gDoc.Validators) != N {

@@ -8,8 +8,8 @@ import (
 	acm "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
-	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types" // for GlobalPermissionAddress ...
+	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types" // for GlobalPermissionAddress ...
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
 )
 
@@ -543,14 +543,13 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 
 		// validate the input strings
 		if err := tx.ValidateStrings(); err != nil {
-			log.Info(err.Error())
-			return types.ErrTxInvalidString
+			return err
 		}
 
 		value := tx.Input.Amount - tx.Fee
 
 		// let's say cost of a name for one block is len(data) + 32
-		costPerBlock := types.NameCostPerBlock * types.NameCostPerByte * tx.BaseEntryCost()
+		costPerBlock := types.NameCostPerBlock(types.NameBaseCost(tx.Name, tx.Data))
 		expiresIn := int(value / costPerBlock)
 		lastBlockHeight := _s.LastBlockHeight
 
@@ -591,7 +590,7 @@ func ExecTx(blockCache *BlockCache, tx types.Tx, runCall bool, evc events.Fireab
 				} else {
 					// since the size of the data may have changed
 					// we use the total amount of "credit"
-					oldCredit := int64(entry.Expires-lastBlockHeight) * types.BaseEntryCost(entry.Name, entry.Data)
+					oldCredit := int64(entry.Expires-lastBlockHeight) * types.NameBaseCost(entry.Name, entry.Data)
 					credit := oldCredit + value
 					expiresIn = int(credit / costPerBlock)
 					if expiresIn < types.MinNameRegistrationPeriod {

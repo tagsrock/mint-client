@@ -9,7 +9,7 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
-func setConfig(cmd *cobra.Command, args []string) {
+func cliConfig(cmd *cobra.Command, args []string) {
 
 	checkFlags(nodeAddr, seeds, db_backend, log_level, rpcAddr, fast_sync)
 
@@ -19,12 +19,13 @@ func setConfig(cmd *cobra.Command, args []string) {
 # For more information, see https://github.com/toml-lang/toml
 
 moniker = "%s"
+skip_upnp = %t
 node_laddr = "%s"
 seeds = "%s"
 fast_sync = %t
 db_backend = "%s"
 log_level = "%s"
-rpc_laddr = "%s"`, moniker, nodeAddr, seeds, fast_sync, db_backend, log_level, rpcAddr)
+rpc_laddr = "%s"`, moniker, skip_upnp, nodeAddr, seeds, fast_sync, db_backend, log_level, rpcAddr)
 
 	fmt.Printf("%v\n", Config)
 

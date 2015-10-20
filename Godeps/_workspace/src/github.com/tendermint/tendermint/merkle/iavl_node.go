@@ -9,11 +9,10 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
-type IAVLNode struct {
-	key interface // Node
-	{
+// Node
 
-	}
+type IAVLNode struct {
+	key       interface{}
 	value     interface{}
 	height    int8
 	size      int

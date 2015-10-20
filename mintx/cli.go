@@ -6,126 +6,80 @@ import (
 
 	"github.com/eris-ltd/mint-client/mintx/core"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
-// do we really need these?
-/*
-func cliInput(c *cli.Context) {
-	pubkey, amtS, nonceS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr")
-	input, err := coreInput(pubkey, amtS, nonceS, addr)
-	common.IfExit(err)
-	fmt.Printf("%s\n", input)
-}
-
-func cliOutput(c *cli.Context) {
-	addr, amtS := c.String("addr"), c.String("amt")
-	output, err := coreOutput(addr, amtS)
-	common.IfExit(err)
-	fmt.Printf("%s\n", output)
-}
-*/
-
-func cliSend(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	pubkey, amtS, nonceS, addr, toAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("addr"), c.String("to")
-	tx, err := core.Send(nodeAddr, pubkey, addr, toAddr, amtS, nonceS)
+func cliSend(cmd *cobra.Command, args []string) {
+	tx, err := core.Send(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, toFlag, amtFlag, nonceFlag)
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliName(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
-
-	if c.IsSet("data") && c.IsSet("data-file") {
+func cliName(cmd *cobra.Command, args []string) {
+	if dataFlag != "" && dataFileFlag != "" {
 		common.Exit(fmt.Errorf("Please specify only one of --data and --data-file"))
 	}
-	name, data, dataFile := c.String("name"), c.String("data"), c.String("data-file")
-	if data == "" && dataFile != "" {
-		b, err := ioutil.ReadFile(dataFile)
+	data := dataFlag
+	if dataFlag == "" && dataFileFlag != "" {
+		b, err := ioutil.ReadFile(dataFileFlag)
 		common.IfExit(err)
 		data = string(b)
 	}
-	tx, err := core.Name(nodeAddr, pubkey, addr, amtS, nonceS, feeS, name, data)
+	tx, err := core.Name(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, amtFlag, nonceFlag, feeFlag, nameFlag, data)
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliCall(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	pubkey, amtS, nonceS, feeS, addr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("fee"), c.String("addr")
-	toAddr, gasS, data := c.String("to"), c.String("gas"), c.String("data")
-	tx, err := core.Call(nodeAddr, pubkey, addr, toAddr, amtS, nonceS, gasS, feeS, data)
+func cliCall(cmd *cobra.Command, args []string) {
+	tx, err := core.Call(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, toFlag, amtFlag, nonceFlag, gasFlag, feeFlag, dataFlag)
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliPermissions(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	pubkey, nonceS, addr := c.String("pubkey"), c.String("nonce"), c.String("addr")
-
+func cliPermissions(cmd *cobra.Command, args []string) {
 	// all functions take at least 2 args (+ name)
-	if len(c.Args()) < 3 {
-		common.Exit(fmt.Errorf("Please enter the permission function you'd like to call, followed by it's arguments"))
+	if len(args) < 3 {
+		s := fmt.Sprintf("Please enter the permission function you'd like to call, followed by it's arguments.")
+		s = fmt.Sprintf("%s\nOptions:", s)
+		for _, p := range core.PermsFuncs {
+			s = fmt.Sprintf("%s\n\t%s(%s)", s, p.Name, p.Args)
+		}
+		s += "\n"
+		s += "eg. mintx permission set_base 098E260AD99FFAE17A02E0F3692C7A493B122274 create_account true\n"
+
+		common.Exit(fmt.Errorf(s))
 	}
-	permFunc := c.Args()[0]
-	tx, err := core.Permissions(nodeAddr, pubkey, addr, nonceS, permFunc, c.Args()[1:])
+	permFunc := args[0]
+	tx, err := core.Permissions(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, nonceFlag, permFunc, args[1:])
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliNewAccount(c *cli.Context) {
-	/*
-		chainID, nodeAddr := c.String("chainID"), c.String("node-addr")
-		pubkey := c.String("pubkey")
-
-		tx, err := coreNewAccount(nodeAddr,signAddr, pubkey, chainID)
-		common.IfExit(err)
-
-		logger.Debugf("%v\n", tx)
-		unpackSignAndBroadcast(core.SignAndBroadcast( chainID, nodeAddr,signAddr, tx, sign, broadcast, wait)
-	*/
-}
-
-func cliBond(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	pubkey, amtS, nonceS, unbondAddr := c.String("pubkey"), c.String("amt"), c.String("nonce"), c.String("unbond-to")
-	tx, err := core.Bond(nodeAddr, pubkey, unbondAddr, amtS, nonceS)
+func cliBond(cmd *cobra.Command, args []string) {
+	tx, err := core.Bond(nodeAddrFlag, signAddrFlag, pubkeyFlag, unbondtoFlag, amtFlag, nonceFlag)
 	common.IfExit(err)
 
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliUnbond(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	addr, height := c.String("addr"), c.String("height")
-	tx, err := core.Unbond(addr, height)
+func cliUnbond(cmd *cobra.Command, args []string) {
+	tx, err := core.Unbond(addrFlag, heightFlag)
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
-func cliRebond(c *cli.Context) {
-	chainID, nodeAddr, signAddr := c.String("chainID"), c.String("node-addr"), c.String("sign-addr")
-	sign, broadcast, wait := c.Bool("sign"), c.Bool("broadcast"), c.Bool("wait")
-	addr, height := c.String("addr"), c.String("height")
-	tx, err := core.Rebond(addr, height)
+func cliRebond(cmd *cobra.Command, args []string) {
+	tx, err := core.Rebond(addrFlag, heightFlag)
 	common.IfExit(err)
 	logger.Debugf("%v\n", tx)
-	unpackSignAndBroadcast(core.SignAndBroadcast(chainID, nodeAddr, signAddr, tx, sign, broadcast, wait))
+	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
 }
 
 func unpackSignAndBroadcast(result *core.TxResult, err error) {
@@ -135,6 +89,9 @@ func unpackSignAndBroadcast(result *core.TxResult, err error) {
 		return
 	}
 	fmt.Printf("Transaction Hash: %X\n", result.Hash)
+	if result.Address != nil {
+		fmt.Printf("Contract Address: %X\n", result.Address)
+	}
 	if result.Return != nil {
 		fmt.Printf("Block Hash: %X\n", result.BlockHash)
 		fmt.Printf("Return Value: %X\n", result.Return)

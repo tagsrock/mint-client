@@ -17,7 +17,6 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	ptypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	stypes "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/state/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
@@ -48,7 +47,7 @@ func cliRandom(cmd *cobra.Command, args []string) {
 
 	chainID := args[1]
 
-	_, _, err = coreRandom(N, chainID)
+	_, _, err = coreRandom(N, chainID, PubkeyFlag, RootFlag, CsvPathFlag, NoValAccountsFlag)
 	IfExit(err)
 	// XXX: should we just output the genesis here instead?
 	fmt.Printf("genesis.json and priv_validator.json files saved in %s\n", DirFlag)
@@ -62,29 +61,41 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 	var err error
 	// either we pass the name of a csv file or we read a priv_validator over stdin
 	if csvFile != "" {
-		pubkeys, amts, names, perms, setbits := parseCsv(csvFile)
+		var csvValidators, csvAccounts string
+		csvFiles := strings.Split(csvFile, ",")
+		csvValidators = csvFiles[0]
+		if len(csvFiles) > 1 {
+			csvAccounts = csvFiles[1]
+		}
+		pubkeys, amts, names, perms, setbits, err := parseCsv(csvValidators)
+		if err != nil {
+			return nil, err
+		}
 
-		// convert amts to ints
-		amt := make([]int64, len(amts))
-		for i, a := range amts {
-			if amt[i], err = strconv.ParseInt(a, 10, 64); err != nil {
-				return nil, fmt.Errorf("Invalid amount: %v", err)
+		if csvAccounts == "" {
+			genDoc = newGenDoc(chainID, len(pubkeys), len(pubkeys))
+			for i, pk := range pubkeys {
+				genDocAddAccountAndValidator(genDoc, pk, amts[i], names[i], perms[i], setbits[i], i)
+			}
+		} else {
+			pubkeysA, amtsA, namesA, permsA, setbitsA, err := parseCsv(csvAccounts)
+			if err != nil {
+				return nil, err
+			}
+			genDoc = newGenDoc(chainID, len(pubkeys), len(pubkeysA))
+			for i, pk := range pubkeys {
+				genDocAddValidator(genDoc, pk, amts[i], names[i], perms[i], setbits[i], i)
+			}
+			for i, pk := range pubkeysA {
+				genDocAddAccount(genDoc, pk, amtsA[i], namesA[i], permsA[i], setbitsA[i], i)
 			}
 		}
-
-		// convert pubkey hex strings to struct
-		pubKeys := pubKeyStringsToPubKeys(pubkeys)
-
-		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
-		for i, pk := range pubKeys {
-			genDocAddAccountAndValidator(genDoc, pk, amt[i], names[i], perms[i], setbits[i], i)
-		}
 	} else if pubKeys != "" {
-		pubkeys := strings.Split(pubKeys, " ")
+		pubkeys := strings.Split(pubKeys, ",")
 		amt := int64(1) << 50
 		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+		genDoc = newGenDoc(chainID, len(pubkeys), len(pubkeys))
 
-		genDoc = newGenDoc(chainID, len(pubKeys), len(pubKeys))
 		for i, pk := range pubKeys {
 			genDocAddAccountAndValidator(genDoc, pk, amt, "", ptypes.DefaultPermFlags, ptypes.DefaultPermFlags, i)
 		}
@@ -106,19 +117,53 @@ func coreKnown(chainID, csvFile, pubKeys string) ([]byte, error) {
 	return genesisBytes, nil
 }
 
-func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
+func coreRandom(N int, chainID, pubKeys, roots, csvFile string, noVals bool) (genesisBytes []byte, privVals []*types.PrivValidator, err error) {
 	fmt.Println("Generating accounts ...")
-	genDoc, _, privVals := state.RandGenesisDoc(N, true, 100000, N, false, 1000)
+	genDoc, _, privVals := stypes.RandGenesisDoc(N, true, 100000, N, false, 1000)
 
 	genDoc.ChainID = chainID
 
 	// RandGenesisDoc produces random accounts and validators.
-	// Give the validators accounts:
-	genDoc.Accounts = make([]stypes.GenesisAccount, N)
-	for i, pv := range privVals {
-		genDoc.Accounts[i] = stypes.GenesisAccount{
-			Address: pv.Address,
-			Amount:  int64(2) << 50,
+	genDoc.Accounts = make([]stypes.GenesisAccount, 0)
+
+	if !noVals {
+		perms := ptypes.DefaultPermFlags
+		// Give the validators accounts:
+		for _, pv := range privVals {
+			genDocAddAccount(genDoc, pv.PubKey, int64(2)<<50, "", perms, perms, -1)
+		}
+	}
+
+	if pubKeys != "" {
+		pubkeys := strings.Split(pubKeys, ",")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		for _, pk := range pubKeys {
+			perms := ptypes.DefaultPermFlags
+			genDocAddAccount(genDoc, pk, amt, "", perms, perms, -1)
+		}
+	}
+
+	if roots != "" {
+		pubkeys := strings.Split(pubKeys, ",")
+		amt := int64(1) << 50
+		pubKeys := pubKeyStringsToPubKeys(pubkeys)
+
+		for _, pk := range pubKeys {
+			perms := ptypes.AllPermFlags
+			genDocAddAccount(genDoc, pk, amt, "", perms, perms, -1)
+		}
+	}
+
+	if csvFile != "" {
+		pubkeys, amts, names, perms, setbits, err := parseCsv(csvFile)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i, pk := range pubkeys {
+			genDocAddAccount(genDoc, pk, amts[i], names[i], perms[i], setbits[i], -1)
 		}
 	}
 
@@ -134,7 +179,7 @@ func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.P
 
 	// create directory to save priv validators and genesis.json
 	if DirFlag == "" {
-		DirFlag = path.Join(DataContainersPath, chainID)
+		DirFlag = path.Join(BlockchainsPath, chainID)
 	}
 	if _, err = os.Stat(DirFlag); err != nil {
 		if err = os.MkdirAll(DirFlag, 0700); err != nil {
@@ -177,7 +222,8 @@ func coreRandom(N int, chainID string) (genesisBytes []byte, privVals []*types.P
 
 func newGenDoc(chainID string, nVal, nAcc int) *stypes.GenesisDoc {
 	genDoc := stypes.GenesisDoc{
-		ChainID: chainID,
+		ChainID:     chainID,
+		GenesisTime: time.Now(),
 	}
 	genDoc.Accounts = make([]stypes.GenesisAccount, nAcc)
 	genDoc.Validators = make([]stypes.GenesisValidator, nVal)
@@ -201,9 +247,9 @@ func genesisFromPrivValBytes(chainID string, privJSON []byte) *stypes.GenesisDoc
 	return genDoc
 }
 
-func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
+func genDocAddAccount(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
 	addr := pubKey.Address()
-	genDoc.Accounts[index] = stypes.GenesisAccount{
+	acc := stypes.GenesisAccount{
 		Address: addr,
 		Amount:  amt,
 		Name:    name,
@@ -214,6 +260,15 @@ func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubK
 			},
 		},
 	}
+	if index < 0 {
+		genDoc.Accounts = append(genDoc.Accounts, acc)
+	} else {
+		genDoc.Accounts[index] = acc
+	}
+}
+
+func genDocAddValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
+	addr := pubKey.Address()
 	genDoc.Validators[index] = stypes.GenesisValidator{
 		PubKey: pubKey,
 		Amount: amt,
@@ -225,6 +280,11 @@ func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubK
 			},
 		},
 	}
+}
+
+func genDocAddAccountAndValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519, amt int64, name string, perm, setbit ptypes.PermFlag, index int) {
+	genDocAddAccount(genDoc, pubKey, amt, name, perm, setbit, index)
+	genDocAddValidator(genDoc, pubKey, amt, name, perm, setbit, index)
 }
 
 //-----------------------------------------------------------------------------
@@ -254,11 +314,11 @@ func ifExistsElse(list []string, index int, defaultValue string) string {
 }
 
 //takes a csv in the format defined [here]
-func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []ptypes.PermFlag) {
+func parseCsv(filePath string) (pubKeys []account.PubKeyEd25519, amts []int64, names []string, perms, setbits []ptypes.PermFlag, err error) {
 
-	csvFile, err := os.Open(path)
+	csvFile, err := os.Open(filePath)
 	if err != nil {
-		Exit(fmt.Errorf("Couldn't open file: %s: %v", path, err))
+		Exit(fmt.Errorf("Couldn't open file: %s: %v", filePath, err))
 	}
 	defer csvFile.Close()
 
@@ -270,14 +330,14 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []ptyp
 
 	}
 
-	pubkeys = make([]string, len(params))
-	amts = make([]string, len(params))
+	pubkeys := make([]string, len(params))
+	amtS := make([]string, len(params))
 	names = make([]string, len(params))
 	permsS := make([]string, len(params))
 	setbitS := make([]string, len(params))
 	for i, each := range params {
 		pubkeys[i] = each[0]
-		amts[i] = ifExistsElse(each, 1, "1000")
+		amtS[i] = ifExistsElse(each, 1, "1000")
 		names[i] = ifExistsElse(each, 2, "")
 		permsS[i] = ifExistsElse(each, 3, fmt.Sprintf("%d", ptypes.DefaultPermFlags))
 		setbitS[i] = ifExistsElse(each, 4, permsS[i])
@@ -300,7 +360,20 @@ func parseCsv(path string) (pubkeys, amts, names []string, perms, setbits []ptyp
 		}
 		setbits[i] = ptypes.PermFlag(setbitsFlag)
 	}
-	return pubkeys, amts, names, perms, setbits
+
+	// convert amts to ints
+	amts = make([]int64, len(amtS))
+	for i, a := range amtS {
+		if amts[i], err = strconv.ParseInt(a, 10, 64); err != nil {
+			err = fmt.Errorf("Invalid amount: %v", err)
+			return
+		}
+	}
+
+	// convert pubkey hex strings to struct
+	pubKeys = pubKeyStringsToPubKeys(pubkeys)
+
+	return pubKeys, amts, names, perms, setbits, nil
 }
 
 const stdinTimeoutSeconds = 1

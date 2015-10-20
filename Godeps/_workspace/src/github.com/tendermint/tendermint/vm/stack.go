@@ -5,8 +5,9 @@ import (
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 )
 
+// Not goroutine safe
 type Stack struct {
-	data []Word256 // Not goroutine safe
+	data []Word256
 	ptr  int
 
 	gas *int64

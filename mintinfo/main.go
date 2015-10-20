@@ -3,19 +3,20 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
 var (
-	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
+	DefaultNodeRPCHost = "localhost"
 	DefaultNodeRPCPort = "46657"
-	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
+	DefaultNodeRPCAddr = DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
 	DefaultChainID string
 
-	REQUEST_TYPE = "JSONRPC"
+	REQUEST_TYPE = "HTTP"
 	client       cclient.Client
 )
 
@@ -25,120 +26,105 @@ func init() {
 	if nodeAddr != "" {
 		DefaultNodeRPCAddr = nodeAddr
 	}
-
-	chainID := os.Getenv("MINTX_CHAINID")
-	if chainID != "" {
-		DefaultChainID = chainID
-	}
 }
+
+var (
+	nodeAddrFlag string
+)
 
 func main() {
 
 	// these are defined in here so we can update the
 	// defaults with env variables first
-	var (
-		//----------------------------------------------------------------
-		// flags with env var defaults
-		nodeAddrFlag = cli.StringFlag{
-			Name:  "node-addr",
-			Usage: "set the address of the tendermint rpc server",
-			Value: DefaultNodeRPCAddr,
-		}
 
-		chainidFlag = cli.StringFlag{
-			Name:  "chainID",
-			Usage: "specify the chainID",
-			Value: DefaultChainID,
-		}
+	var statusCmd = &cobra.Command{
+		Use:   "status",
+		Short: "Get a node's status",
+		Run:   cliStatus,
+	}
 
-		//----------------------------------------------------------------
+	var netInfoCmd = &cobra.Command{
+		Use:   "net-info",
+		Short: "Get a node's network info",
+		Run:   cliNetInfo,
+	}
 
-		statusCmd = cli.Command{
-			Name:   "status",
-			Usage:  "Get a node's status",
-			Action: cliStatus,
-		}
+	var genesisCmd = &cobra.Command{
+		Use:   "genesis",
+		Short: "Get a node's genesis.json",
+		Run:   cliGenesis,
+	}
 
-		netInfoCmd = cli.Command{
-			Name:   "net-info",
-			Usage:  "Get a node's network info",
-			Action: cliNetInfo,
-		}
+	var validatorsCmd = &cobra.Command{
+		Use:   "validators",
+		Short: "List the chain's validator set",
+		Run:   cliValidators,
+	}
 
-		genesisCmd = cli.Command{
-			Name:   "genesis",
-			Usage:  "Get a node's genesis.json",
-			Action: cliGenesis,
-		}
+	var consensusCmd = &cobra.Command{
+		Use:   "consensus",
+		Short: "Dump a node's consensus state",
+		Run:   cliConsensus,
+	}
 
-		validatorsCmd = cli.Command{
-			Name:   "validators",
-			Usage:  "List the chain's validator set",
-			Action: cliValidators,
-		}
+	var unconfirmedCmd = &cobra.Command{
+		Use:   "unconfirmed",
+		Short: "List the txs in a node's mempool",
+		Run:   cliUnconfirmed,
+	}
 
-		consensusCmd = cli.Command{
-			Name:   "consensus",
-			Usage:  "Dump a node's consensus state",
-			Action: cliConsensus,
-		}
+	var accountsCmd = &cobra.Command{
+		Use:   "accounts",
+		Short: "List all accounts on the chain, or specify an address",
+		Run:   cliAccounts,
+	}
 
-		unconfirmedCmd = cli.Command{
-			Name:   "unconfirmed",
-			Usage:  "List the txs in a node's mempool",
-			Action: cliUnconfirmed,
-		}
+	var namesCmd = &cobra.Command{
+		Use:   "names",
+		Short: "List all name reg entries on the chain",
+		Run:   cliNames,
+	}
 
-		accountsCmd = cli.Command{
-			Name:   "accounts",
-			Usage:  "List all accounts on the chain, or specify an address",
-			Action: cliAccounts,
-		}
+	var blocksCmd = &cobra.Command{
+		Use:   "blocks",
+		Short: "Get a sequence of blocks between two heights, or get a single block by height",
+		Run:   cliBlocks,
+	}
 
-		namesCmd = cli.Command{
-			Name:   "names",
-			Usage:  "List all name reg entries on the chain",
-			Action: cliNames,
-		}
+	var storageCmd = &cobra.Command{
+		Use:   "storage",
+		Short: "Get the storage for an account, or for a particular key in that account's storage",
+		Run:   cliStorage,
+	}
 
-		blocksCmd = cli.Command{
-			Name:   "blocks",
-			Usage:  "Get a sequence of blocks between two heights, or get a single block by height",
-			Action: cliBlocks,
-		}
+	var callCmd = &cobra.Command{
+		Use:   "call",
+		Short: "Call an address with some data",
+		Run:   cliCall,
+	}
 
-		storageCmd = cli.Command{
-			Name:   "storage",
-			Usage:  "Get the storage for an account, or for a particular key in that account's storage",
-			Action: cliStorage,
-		}
+	var callCodeCmd = &cobra.Command{
+		Use:   "call-code",
+		Short: "Run some code on some data",
+		Run:   cliCallCode,
+	}
 
-		callCmd = cli.Command{
-			Name:   "call",
-			Usage:  "Call an address with some data",
-			Action: cliCall,
-		}
+	var broadcastCmd = &cobra.Command{
+		Use:   "broadcast",
+		Short: "Broadcast some tx bytes",
+		Run:   cliBroadcast,
+	}
 
-		callCodeCmd = cli.Command{
-			Name:   "call-code",
-			Usage:  "Run some code on some data",
-			Action: cliCallCode,
-		}
+	var rootCmd = &cobra.Command{
+		Use:              "mintinfo",
+		Short:            "Fetch data from a tendermint node via rpc",
+		PersistentPreRun: before,
+	}
 
-		broadcastCmd = cli.Command{
-			Name:   "broadcast",
-			Usage:  "Broadcast some tx bytes",
-			Action: cliBroadcast,
-		}
-	)
+	// flags with env var defaults
+	rootCmd.PersistentFlags().StringVarP(&nodeAddrFlag, "node-addr", "", DefaultNodeRPCAddr, "set the address of the tendermint rpc server")
 
-	app := cli.NewApp()
-	app.Name = "mintinfo"
-	app.Usage = "Fetch data from a tendermint node via rpc"
-	app.Version = "0.0.1"
-	app.Author = "Ethan Buchman"
-	app.Email = "ethan@erisindustries.com"
-	app.Commands = []cli.Command{
+	rootCmd.AddCommand(
 		statusCmd,
 		netInfoCmd,
 		genesisCmd,
@@ -152,20 +138,19 @@ func main() {
 		callCmd,
 		callCodeCmd,
 		broadcastCmd,
-	}
-	app.Flags = []cli.Flag{
-		nodeAddrFlag,
-		chainidFlag,
-	}
-	app.Before = before
-
-	app.Run(os.Args)
+	)
+	rootCmd.Execute()
 }
 
-func before(c *cli.Context) error {
-	nodeAddr := c.String("node-addr")
-	client = cclient.NewClient(nodeAddr, REQUEST_TYPE)
-	return nil
+func before(cmd *cobra.Command, args []string) {
+	if !strings.HasPrefix(nodeAddrFlag, "http://") {
+		nodeAddrFlag = "http://" + nodeAddrFlag
+	}
+	if !strings.HasSuffix(nodeAddrFlag, "/") {
+		nodeAddrFlag += "/"
+	}
+
+	client = cclient.NewClient(nodeAddrFlag, REQUEST_TYPE)
 }
 
 func exit(err error) {
