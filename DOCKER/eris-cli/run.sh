@@ -60,8 +60,8 @@ eris chains new --priv=priv_validator.json --csv=genesis.csv --options="moniker=
 
 rm priv_validator.json genesis.csv
 
-# XXX: we should offer some special commands like `eris chains plop genesis`
-GENESIS=`docker run --rm --volumes-from eris_data_${CHAIN_ID}_1 -t --entrypoint="cat" eris/erisdb:0.10.3 $TMROOT/genesis.json`
+GENESIS=`eris chains plop $CHAIN_ID genesis`
+#GENESIS=`docker run --rm --volumes-from eris_data_${CHAIN_ID}_1 -t --entrypoint="cat" eris/erisdb:0.10.3 $TMROOT/genesis.json`
 echo "genesis $GENESIS"
 
 #------------------------------------------------------------------
