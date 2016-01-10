@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	MaxCommitWaitTimeSeconds = 10
+	MaxCommitWaitTimeSeconds = 20
 )
 
 //------------------------------------------------------------------------------------
@@ -99,15 +99,15 @@ type PermFunc struct {
 }
 
 var PermsFuncs = []PermFunc{
-	PermFunc{"set_base", "address, permission flag, value"},
-	PermFunc{"unset_base", "address, permission flag"},
-	PermFunc{"set_global", "permission flag, value"},
-	PermFunc{"add_role", "address, role"},
-	PermFunc{"rm_role", "address, role"},
+	{"set_base", "address, permission flag, value"},
+	{"unset_base", "address, permission flag"},
+	{"set_global", "permission flag, value"},
+	{"add_role", "address, role"},
+	{"rm_role", "address, role"},
 }
 
 func Permissions(nodeAddr, signAddr, pubkey, addrS, nonceS, permFunc string, argsS []string) (*types.PermissionsTx, error) {
-	pub, _, nonce, err := checkCommon(nodeAddr, signAddr, pubkey, addrS, "0", "0")
+	pub, _, nonce, err := checkCommon(nodeAddr, signAddr, pubkey, addrS, "0", nonceS)
 	if err != nil {
 		return nil, err
 	}
@@ -516,7 +516,7 @@ func subscribeAndWait(tx types.Tx, chainID, nodeAddr string, inputAddr []byte) (
 			// if its a block, remember the block hash
 			blockData, ok := result.Data.(types.EventDataNewBlock)
 			if ok {
-				logger.Println(blockData.Block)
+				logger.Infoln(blockData.Block)
 				latestBlockHash = blockData.Block.Hash()
 				continue
 			}
@@ -581,7 +581,7 @@ func checkCommon(nodeAddr, signAddr, pubkey, addr, amtS, nonceS string) (pub acc
 		if addr != "" {
 			// NOTE: if --addr given byt MINTX_PUBKEY is set, the pubkey still wins
 			// TODO: fix this
-			logger.Errorln("you have specified both a pubkey and an address. the pubkey takes precedent")
+			logger.Infoln("you have specified both a pubkey and an address. the pubkey takes precedent")
 		}
 		pubKeyBytes, err = hex.DecodeString(pubkey)
 		if err != nil {

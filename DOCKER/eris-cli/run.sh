@@ -1,5 +1,11 @@
 #! /bin/bash
 
+# init the eris cli
+export ERIS_PULL_APPROVE=true
+cd /home/eris/.eris
+yes | eris init
+yes | eris init
+
 #default
 NUM_NODES=1
 
@@ -13,11 +19,11 @@ echo "******** SETTING UP KEYS ************"
 for ((i=1; i<=$NUM_NODES; i++)) 
 do
 eris services start keys
-ADDR=`docker run -t --rm --volumes-from eris_data_keys_1 eris/keys eris-keys gen`
+ADDR=`eris services exec keys "eris-keys  gen --no-pass"`
 # ADDR has an extra character. trim it
 ADDRS[$i]=${ADDR%?}
 echo "addr_$i ${ADDRS[$i]}"
-PUBKEY=`docker run -t --rm --volumes-from eris_data_keys_1 eris/keys eris-keys pub --addr ${ADDRS[$i]}`
+PUBKEY=`eris services exec keys "eris-keys pub --addr=${ADDRS[$i]}"`
 PUBKEYS[$i]=${PUBKEY%?}
 echo "pubkey_$i ${PUBKEYS[$i]}"
 done
@@ -54,8 +60,8 @@ eris chains new --priv=priv_validator.json --csv=genesis.csv --options="moniker=
 
 rm priv_validator.json genesis.csv
 
-# XXX: we should offer some special commands like `eris chains plop genesis`
-GENESIS=`docker run --rm --volumes-from eris_data_${CHAIN_ID}_1 -t --entrypoint="cat" eris/erisdb:0.10.1 $TMROOT/genesis.json`
+GENESIS=`eris chains plop $CHAIN_ID genesis`
+#GENESIS=`docker run --rm --volumes-from eris_data_${CHAIN_ID}_1 -t --entrypoint="cat" eris/erisdb:0.10.3 $TMROOT/genesis.json`
 echo "genesis $GENESIS"
 
 #------------------------------------------------------------------

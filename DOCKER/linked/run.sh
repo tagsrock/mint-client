@@ -39,14 +39,14 @@ echo "******** RUNNING KEYS DAEMON ************"
 
 for ((i=1; i<=$NUM_NODES; i++)) 
 do
-docker run --name mct_keys"_"$i --volumes-from mct_keys-data"_"$i -d mct_keys
+docker run --name mct_keys"_"$i  --volumes-from mct_keys-data"_"$i -d mct_keys
 ifExit "failed to start keys"
-ADDR=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys eris-keys gen`
+ADDR=`docker exec mct_keys"_"$i  eris-keys gen --no-pass`
 # ADDR has an extra character. trim it
-ADDRS[$i]=${ADDR%?}
+ADDRS[$i]=${ADDR}
 echo "addr_$i ${ADDRS[$i]}"
-PUBKEY=`docker run -t --rm --volumes-from mct_keys-data"_"$i mct_keys eris-keys pub --addr ${ADDRS[$i]}`
-PUBKEYS[$i]=${PUBKEY%?}
+PUBKEY=`docker exec mct_keys"_"$i eris-keys pub --addr=${ADDRS[$i]}`
+PUBKEYS[$i]=${PUBKEY}
 echo "pubkey_$i ${PUBKEYS[$i]}"
 done
 
