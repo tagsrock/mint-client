@@ -8,13 +8,14 @@ import (
 
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 func cliSend(cmd *cobra.Command, args []string) {
 	tx, err := core.Send(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, toFlag, amtFlag, nonceFlag)
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliName(cmd *cobra.Command, args []string) {
@@ -29,15 +30,15 @@ func cliName(cmd *cobra.Command, args []string) {
 	}
 	tx, err := core.Name(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, amtFlag, nonceFlag, feeFlag, nameFlag, data)
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliCall(cmd *cobra.Command, args []string) {
 	tx, err := core.Call(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, toFlag, amtFlag, nonceFlag, gasFlag, feeFlag, dataFlag)
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliPermissions(cmd *cobra.Command, args []string) {
@@ -56,30 +57,30 @@ func cliPermissions(cmd *cobra.Command, args []string) {
 	permFunc := args[0]
 	tx, err := core.Permissions(nodeAddrFlag, signAddrFlag, pubkeyFlag, addrFlag, nonceFlag, permFunc, args[1:])
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliBond(cmd *cobra.Command, args []string) {
 	tx, err := core.Bond(nodeAddrFlag, signAddrFlag, pubkeyFlag, unbondtoFlag, amtFlag, nonceFlag)
 	common.IfExit(err)
 
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliUnbond(cmd *cobra.Command, args []string) {
 	tx, err := core.Unbond(addrFlag, heightFlag)
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func cliRebond(cmd *cobra.Command, args []string) {
 	tx, err := core.Rebond(addrFlag, heightFlag)
 	common.IfExit(err)
-	logger.Debugf("%v\n", tx)
 	unpackSignAndBroadcast(core.SignAndBroadcast(chainidFlag, nodeAddrFlag, signAddrFlag, tx, signFlag, broadcastFlag, waitFlag))
+	logger.Debugf("%s\n", wire.JSONBytes(tx))
 }
 
 func unpackSignAndBroadcast(result *core.TxResult, err error) {
