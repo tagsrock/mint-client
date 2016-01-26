@@ -222,8 +222,8 @@ func coreRandom(N int, chainID, pubKeys, roots, csvFile string, noVals bool) (ge
 
 func newGenDoc(chainID string, nVal, nAcc int) *stypes.GenesisDoc {
 	genDoc := stypes.GenesisDoc{
-		ChainID:     chainID,
-		GenesisTime: time.Now(),
+		ChainID: chainID,
+		// GenesisTime: time.Now(),
 	}
 	genDoc.Accounts = make([]stypes.GenesisAccount, nAcc)
 	genDoc.Validators = make([]stypes.GenesisValidator, nVal)
@@ -274,7 +274,7 @@ func genDocAddValidator(genDoc *stypes.GenesisDoc, pubKey account.PubKeyEd25519,
 		Amount: amt,
 		Name:   name,
 		UnbondTo: []stypes.BasicAccount{
-			stypes.BasicAccount{
+			{
 				Address: addr,
 				Amount:  amt,
 			},
