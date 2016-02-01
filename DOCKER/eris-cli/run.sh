@@ -1,10 +1,11 @@
 #! /bin/bash
 
 # init the eris cli
-export ERIS_PULL_APPROVE=true
+export ERIS_PULL_APPROVE="true"
+export ERIS_MIGRATE_APPROVE="true"
+
 cd /home/eris/.eris
-yes | eris init
-yes | eris init
+eris init --yes --testing=true
 
 #default
 NUM_NODES=1
@@ -56,7 +57,7 @@ done
 
 # XXX: for multi the first node should be separate (without seed)
 #eris chains new --priv=priv_validator.json --csv=genesis.csv --options="moniker=test_nom,seeds=tendermint:46656" $CHAIN_ID
-eris chains new --priv=priv_validator.json --csv=genesis.csv --options="moniker=test_nom" $CHAIN_ID
+eris chains new --dir . --options="moniker=test_nom" $CHAIN_ID
 
 rm priv_validator.json genesis.csv
 
