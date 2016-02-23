@@ -56,6 +56,8 @@ var (
 	signFlag      bool
 	broadcastFlag bool
 	waitFlag      bool
+	verboseFlag   bool
+	debugFlag     bool
 
 	// some of these are strings rather than flags because the `core`
 	// functions have a pure string interface so they work nicely from http
@@ -70,7 +72,6 @@ var (
 	unbondtoFlag string
 	heightFlag   string
 
-	logLevelFlag int
 )
 
 func main() {
@@ -175,7 +176,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&broadcastFlag, "broadcast", "b", false, "broadcast the transaction to the blockchain")
 	rootCmd.PersistentFlags().BoolVarP(&waitFlag, "wait", "w", false, "wait for the transaction to be committed in a block")
 
-	rootCmd.PersistentFlags().IntVarP(&logLevelFlag, "log", "l", 0, "log level")
+	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "v", false, "verbose log level")
+	rootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "d", false, "debug log level")
 
 	rootCmd.AddCommand(versionCmd, sendCmd, callCmd, nameCmd, bondCmd, unbondCmd, rebondCmd, permissionsCmd)
 	common.IfExit(rootCmd.Execute())
@@ -183,7 +185,13 @@ func main() {
 
 func before(cmd *cobra.Command, args []string) {
 	config.Set("chain_id", chainidFlag)
-	log.SetLoggers(logLevelFlag, os.Stdout, os.Stderr)
+	if debugFlag {
+		log.SetLoggers(log.LogLevelDebug, os.Stdout, os.Stderr)
+	} else if verboseFlag {
+		log.SetLoggers(log.LogLevelInfo, os.Stdout, os.Stderr)
+	} else {
+		log.SetLoggers(log.LogLevelWarn, os.Stdout, os.Stderr)
+	}
 
 	if !strings.HasPrefix(nodeAddrFlag, "http://") {
 		nodeAddrFlag = "http://" + nodeAddrFlag

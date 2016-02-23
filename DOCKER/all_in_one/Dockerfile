@@ -19,7 +19,7 @@ RUN go install ./...
 RUN go get github.com/eris-ltd/eris-keys
 
 # grab tendermint
-RUN go get github.com/tendermint/tendermint/cmd/tendermint
+RUN go get github.com/eris-ltd/tendermint/cmd/tendermint
 ENV TMROOT /home/eris/.eris/blockchains/tendermint
 ADD $DOCKERFILES/config.toml $TMROOT/config.toml
 RUN chown -R $USER:$USER $TMROOT

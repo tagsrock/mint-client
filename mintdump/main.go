@@ -5,21 +5,21 @@ import (
 	"path"
 
 	. "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/common/go/common"
+	cfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/config"
+	tmcfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/config/tendermint"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
-	cfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
-	tmcfg "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/config/tendermint"
 	"os"
 )
 
 var (
 	config = tmcfg.GetConfig("")
 
-	ApiFlag        bool
+	ApiFlag            bool
 	DumpToIPFSFlag     bool
 	DumpValidatorsFlag bool
-	DataDirFlag    string
-	IPFShash       string
-	HostFlag       string
+	DataDirFlag        string
+	IPFShash           string
+	HostFlag           string
 
 //	StopNode    bool
 )

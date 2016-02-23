@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/code.google.com/p/go-uuid/uuid"
-	kstore "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto/key_store"
+	kstore "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/eris-keys/crypto"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/account"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/wire"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/ed25519"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/wayn3h0/go-uuid"
 )
 
 func Pubkeyer(k *kstore.Key) ([]byte, error) {
@@ -21,9 +21,9 @@ func Pubkeyer(k *kstore.Key) ([]byte, error) {
 	return pubKeyBytes[:], nil
 }
 
-func init() {
-	kstore.SetPubkeyer(Pubkeyer)
-}
+// func init() {
+// 	kstore.SetPubkeyer(Pubkeyer)
+// }
 
 type PrivValidator struct {
 	Address    []byte                 `json:"address"`
@@ -53,7 +53,9 @@ func cliConvertErisKeyToPrivValidator(cmd *cobra.Command, args []string) {
 func coreConvertErisKeyToPrivValidator(addrBytes []byte) (*PrivValidator, error) {
 	keyStore := kstore.NewKeyStorePlain(DefaultKeyStore)
 	key, err := keyStore.GetKey(addrBytes, "")
-	ifExit(err)
+	if err != nil {
+		return nil, err
+	}
 
 	pub, err := key.Pubkey()
 	if err != nil {
@@ -99,8 +101,12 @@ func coreConvertPrivValidatorToErisKey(b []byte) (key *kstore.Key, err error) {
 
 	keyStore := kstore.NewKeyStorePlain(DefaultKeyStore)
 
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
 	key = &kstore.Key{
-		Id:         uuid.NewRandom(),
+		Id:         id,
 		Type:       kstore.KeyType{kstore.CurveTypeEd25519, kstore.AddrTypeRipemd160},
 		Address:    pv.Address,
 		PrivateKey: pv.PrivKey[:],
