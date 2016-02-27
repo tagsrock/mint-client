@@ -4,10 +4,10 @@
 CHAIN_ID="mychain"
 
 usage() {
-   cat <<EOF 
+   cat <<EOF
     This file is a complete demonstration for the following steps in the eris pipeline
     using nothing but "curl" to talk to HTTP servers and standard unix commands for processing:
-    
+
      0) Install
      1) Start a chain with one validator
      2) Compile a solidity contract
@@ -24,7 +24,7 @@ usage() {
     - set \$GOPATH, set GOBIN=\$GOPATH/bin, set PATH=\$GOBIN:\$PATH
     - have jq installed (https://stedolan.github.io/jq/download)
 
-   Usage: $0 -i -c <chain name[$CHAIN_ID]>  -h  
+   Usage: $0 -i -c <chain name[$CHAIN_ID]>  -h
           -i  do software installs only and exit;
           -c  set chain id, default is $CHAIN_ID
           -h  display this message
@@ -38,13 +38,13 @@ EOF
 ## Step 0 - Installs		      ##
 ########################################
 do_installs() {
-    #gmp-dev package is needed because eris-keys links to it and needs <gmp.h> 
-    #And, jq JSON parser is used throughout (https://stedolan.github.io/jq/download) 
+    #gmp-dev package is needed because eris-keys links to it and needs <gmp.h>
+    #And, jq JSON parser is used throughout (https://stedolan.github.io/jq/download)
     #These are probably the right commands and package names for a few OSs, but only yum install was tested on AWS AMI
     if [ `which yum 2>/dev/null` ]; then
       sudo yum install -y gmp-devel jq
     elif [ `which apt-get 2>/dev/null` ]; then
-      sudo apt-get install libgmp3-dev jq 
+      sudo apt-get install libgmp3-dev jq
     elif [ `which brew 2>/dev/null` ]; then
       brew install gmp jq
     else
@@ -164,7 +164,7 @@ fi
 
 # unescape quotes in the json and write the ABI to file
 # TODO: fix the lllc-server so this doesn't happen
-ABI=`eval echo $ABI` 
+ABI=`eval echo $ABI`
 ABI=`echo $ABI | jq .`
 
 echo "BYTE CODE:"
@@ -190,13 +190,13 @@ echo $NONCE
 echo ""
 
 # some variables for the call tx
-CALLTX_TYPE=2 # each tx has a type (they can be found in github.com/tendermint/tendermint/types/tx.go)
+CALLTX_TYPE=2 # each tx has a type (they can be found in github.com/eris-ltd/tendermint/types/tx.go)
 FEE=0
 GAS=1000
 AMOUNT=1
 NONCE=$(($NONCE + 1)) # the nonce in the transaction must be one greater than the account's current nonce
 
-# the string that must be signed is a special, canonical, deterministic json structure 
+# the string that must be signed is a special, canonical, deterministic json structure
 # that includes the chain_id and the transaction, where all fields are alphabetically ordered and there are no spaces
 SIGN_BYTES='{"chain_id":"'"$CHAIN_ID"'","tx":['"$CALLTX_TYPE"',{"address":"","data":"'"$BYTECODE"'","fee":'"$FEE"',"gas_limit":'"$GAS"',"input":{"address":"'"$ADDRESS"'","amount":'"$AMOUNT"',"sequence":'"$NONCE"'}}]}'
 
@@ -313,11 +313,11 @@ echo "CODE AT CONTRACT:"
 echo $CODE
 echo ""
 
-# NOTE: CODE won't be exactly equal to BYTECODE 
+# NOTE: CODE won't be exactly equal to BYTECODE
 # because BYTECODE contains additional code for the actual deployment (the init/constructor sequence of a contract)
 # so we only ensure that BYTECODE contains CODE
 if [[ "$BYTECODE" == *"$CODE"* ]]; then
-	echo 'THE CODE WAS DEPLOYED CORRECTLY!' 
+	echo 'THE CODE WAS DEPLOYED CORRECTLY!'
 else
 	echo 'THE CODE AT THE CONTRACT ADDRESS IS NOT WHAT WE DEPLOYED!'
 	echo "Deployed: $BYTECODE"
@@ -351,7 +351,7 @@ SUM_EXPECTED=$(( $ARG1 + $ARG2 ))
 # Abi directory tree incomplete... Creating it... Directory tree built! a5f3c23b00000000000000000000000000000000000000000000000000000000000000190000000000000000000000000000000000000000000000000000000000000025
 
 DATA=`eris-abi pack --input file <(echo $ABI) $FUNCTION $ARG1 $ARG2`
-DATA=`eris-abi pack --input file <(echo $ABI) $FUNCTION $ARG1 $ARG2` 
+DATA=`eris-abi pack --input file <(echo $ABI) $FUNCTION $ARG1 $ARG2`
 
 echo "DATA FOR CONTRACT CALL:"
 echo $DATA
@@ -378,7 +378,7 @@ if [[ "$SUM_GOT" != "$SUM_EXPECTED" ]]; then
 	echo "GOT $SUM_GOT"
 	echo "EXPECTED $SUM_EXPECTED"
 else
-	echo 'SMART CONTRACT ADDITION TX SUCCEEDED!' 
+	echo 'SMART CONTRACT ADDITION TX SUCCEEDED!'
 	echo "$ARG1 + $ARG2 = $SUM_GOT"
 fi
 echo ""

@@ -2,6 +2,8 @@ package toml
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -49,6 +51,29 @@ func Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
+// A Decoder reads and decodes TOML from an input stream.
+type Decoder struct {
+	r io.Reader
+}
+
+// NewDecoder returns a new Decoder that reads from r.
+// Note that it reads all from r before parsing it.
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		r: r,
+	}
+}
+
+// Decode parses the TOML data from its input and stores it in the value pointed to by v.
+// See the documentation for Unmarshal for details about the conversion of TOML into a Go value.
+func (d *Decoder) Decode(v interface{}) error {
+	b, err := ioutil.ReadAll(d.r)
+	if err != nil {
+		return err
+	}
+	return Unmarshal(b, v)
+}
+
 // Unmarshaler is the interface implemented by objects that can unmarshal a
 // TOML description of themselves.
 // The input can be assumed to be a valid encoding of a TOML value.
@@ -80,6 +105,9 @@ func UnmarshalTable(t *ast.Table, v interface{}) (err error) {
 	}
 	for rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
+	}
+	if err, ok := setUnmarshaler(rv, string(t.Data)); ok {
+		return err
 	}
 	for key, val := range t.Fields {
 		switch av := val.(type) {
@@ -356,11 +384,12 @@ type toml struct {
 	skip         bool
 }
 
-func (p *toml) init() {
+func (p *toml) init(data []rune) {
 	p.line = 1
 	p.table = &ast.Table{
 		Line: p.line,
 		Type: ast.TableTypeNormal,
+		Data: data[:len(data)-1], // truncate the end_symbol added by PEG parse generator.
 	}
 	p.tableMap = map[string]*ast.Table{
 		"": p.table,

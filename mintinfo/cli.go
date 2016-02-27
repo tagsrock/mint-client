@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/types"
+	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/eris-ltd/tendermint/wire"
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 func prettyPrint(o interface{}) (string, error) {

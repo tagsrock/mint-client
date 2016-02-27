@@ -14,9 +14,10 @@ import (
 	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/syndtr/goleveldb/leveldb/storage"
 )
 
+// Logging.
+
 type dropper struct {
-	s *session
-	// Logging.
+	s    *session
 	file storage.File
 }
 
