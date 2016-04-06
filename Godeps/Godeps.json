@@ -50,107 +50,107 @@
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/account",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/blockchain",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/common",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/config",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/config/tendermint",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/db",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/events",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/logger",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/merkle",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/p2p",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/p2p/upnp",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/permission/types",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/rpc/core/types",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/rpc/core_client",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/rpc/types",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/state",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/state/types",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/types",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/vm",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/vm/sha3",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/wire",
 			"Comment": "0.1-66-g635ad92",
-			"Rev": "635ad928efbd9132d880b9568e8a261a876afcfd"
+			"Rev": "b0c1ee2c3ad851cf4e7b9dc95c2e65559e5d447d"
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
@@ -265,11 +265,11 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/ed25519",
-			"Rev": "533fb6548e2071076888eda3c38749d707ba49bc"
+			"Rev": "fdac6641497281ed1cc368687ec6377e96e02b24"
 		},
 		{
 			"ImportPath": "github.com/tendermint/ed25519/extra25519",
-			"Rev": "533fb6548e2071076888eda3c38749d707ba49bc"
+			"Rev": "fdac6641497281ed1cc368687ec6377e96e02b24"
 		},
 		{
 			"ImportPath": "github.com/tendermint/flowcontrol",
