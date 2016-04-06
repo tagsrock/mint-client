@@ -29,23 +29,23 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto",
-			"Rev": "6b4aa3de4b73222d2b06c3c8c258ddf1a74faaae"
+			"Rev": "4a6edda802da557a9f73f384255dc9ebc2bd9ead"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/ed25519",
-			"Rev": "6b4aa3de4b73222d2b06c3c8c258ddf1a74faaae"
+			"Rev": "4a6edda802da557a9f73f384255dc9ebc2bd9ead"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/randentropy",
-			"Rev": "6b4aa3de4b73222d2b06c3c8c258ddf1a74faaae"
+			"Rev": "4a6edda802da557a9f73f384255dc9ebc2bd9ead"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/secp256k1",
-			"Rev": "6b4aa3de4b73222d2b06c3c8c258ddf1a74faaae"
+			"Rev": "4a6edda802da557a9f73f384255dc9ebc2bd9ead"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-keys/crypto/sha3",
-			"Rev": "6b4aa3de4b73222d2b06c3c8c258ddf1a74faaae"
+			"Rev": "4a6edda802da557a9f73f384255dc9ebc2bd9ead"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/tendermint/account",
