@@ -137,7 +137,7 @@ func main() {
 		Run:   cliUnbond,
 	}
 	unbondCmd.Flags().StringVarP(&addrFlag, "addr", "a", "", "specify an address")
-	unbondCmd.Flags().StringVarP(&heightFlag, "height", "h", "", "specify a height to unbond at")
+	unbondCmd.Flags().StringVarP(&heightFlag, "height", "n", "", "specify a height to unbond at")
 
 	var rebondCmd = &cobra.Command{
 		Use:   "rebond",
@@ -146,7 +146,7 @@ func main() {
 		Run:   cliRebond,
 	}
 	rebondCmd.Flags().StringVarP(&addrFlag, "addr", "a", "", "specify an address")
-	rebondCmd.Flags().StringVarP(&heightFlag, "height", "h", "", "specify a height to unbond at")
+	rebondCmd.Flags().StringVarP(&heightFlag, "height", "n", "", "specify a height to unbond at")
 
 	var permissionsCmd = &cobra.Command{
 		Use:   "permission",
