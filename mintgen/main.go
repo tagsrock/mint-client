@@ -42,14 +42,14 @@ func main() {
 		Run:   cliKnown,
 	}
 
-	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "Directory to save genesis and priv_validators in. Default is ~/.eris/blockchains/<chain_id>")
+	randomCmd.Flags().StringVarP(&DirFlag, "dir", "d", "", "directory to save genesis and priv_validators in. Default is ~/.eris/blockchains/<chain_id>")
 	randomCmd.Flags().StringVarP(&PubkeyFlag, "pub", "p", "", "pubkeys to include in accounts when generating genesis.json")
-	randomCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
+	randomCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
 	randomCmd.Flags().StringVarP(&RootFlag, "root", "r", "", "pubkeys to include in accounts and give root permissions to")
 	randomCmd.Flags().BoolVarP(&NoValAccountsFlag, "no-val", "n", false, "don't give the validators accounts")
 
 	knownCmd.Flags().StringVarP(&PubkeyFlag, "pub", "", "", "pubkeys to include when generating genesis.json. flag is req'd")
-	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "Path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
+	knownCmd.Flags().StringVarP(&CsvPathFlag, "csv", "", "", "path to .csv with the following params: (pubkey, starting balance, name, permissions, setbit")
 
 	var rootCmd = &cobra.Command{
 		Use:   "mintgen",
