@@ -71,7 +71,6 @@ var (
 	gasFlag      string
 	unbondtoFlag string
 	heightFlag   string
-
 )
 
 func main() {
@@ -169,7 +168,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&nodeAddrFlag, "node-addr", "", DefaultNodeRPCAddr, "set the tendermint rpc server address (defaults to $MINTX_NODE_ADDR)")
 	rootCmd.PersistentFlags().StringVarP(&pubkeyFlag, "pubkey", "", DefaultPubKey, "specify the pubkey (defaults to $MINTX_PUBKEY)")
 	rootCmd.PersistentFlags().StringVarP(&addrFlag, "addr", "", "", "specify the address (from which the pubkey can be fetch from eris-keys)")
-	rootCmd.PersistentFlags().StringVarP(&chainidFlag, "chainID", "", DefaultChainID, "specify the pubkey (defaults to $MINTX_CHAINID)")
+	rootCmd.PersistentFlags().StringVarP(&chainidFlag, "chainID", "", DefaultChainID, "specify the chainID (defaults to $MINTX_CHAINID)")
 	rootCmd.PersistentFlags().StringVarP(&nonceFlag, "nonce", "", "", "specify the nonce to use for the transaction (should equal the sender account's nonce + 1)")
 
 	rootCmd.PersistentFlags().BoolVarP(&signFlag, "sign", "s", false, "sign the transaction using the eris-keys daemon")

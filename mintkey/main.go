@@ -26,7 +26,7 @@ func main() {
 	var mintToErisCmd = &cobra.Command{
 		Use:   "eris",
 		Short: "Convert a priv_validator.json to an eris-keys key",
-		Long:  "mintkey ers <path/to/priv_validator.json>",
+		Long:  "mintkey eris <path/to/priv_validator.json>",
 		Run:   cliConvertPrivValidatorToErisKey,
 	}
 
