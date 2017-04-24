@@ -1,8 +1,4 @@
-
-Master [![Circle CI](https://circleci.com/gh/eris-ltd/mint-client/tree/master.svg?style=svg)](https://circleci.com/gh/eris-ltd/mint-client)
- Develop [![Circle CI (develop)](https://circleci.com/gh/eris-ltd/mint-client/tree/develop.svg?style=svg)](https://circleci.com/gh/eris-ltd/mint-client)
-
-# mint-client
+# mint-client - DEPRECATED (as of monax v0.17)
 Command line interfaces for low-level conversations with tendermint chains
 
 See tests in ./DOCKER
